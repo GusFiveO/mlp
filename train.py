@@ -4,19 +4,20 @@ from neural_network import NeuralNetwork
 from utils import load_csv
 import pandas as pd
 
+
 def train(df: pd.DataFrame):
-	targets = df.pop('2')
-	# print(df)
-	print("targets:")
-	print(targets)
-	model = NeuralNetwork(df, targets, 10, 0.1, [2], "uniform")
-	print(model)
-	model.forward_propagation()
+    targets = df.pop("2")
+    print("targets:")
+    print(targets)
+    print()
+    model = NeuralNetwork(10, 0.1, [2])
+    model.fit(df, targets)
+    # print(model)
+
 
 if __name__ == "__main__":
-	# df = load_csv('./data_mlp.csv')
-	df = pd.read_csv('./data_mlp.csv', nrows=22)
-	if df is None:
-		exit()
-	train(df)
-	print(list((2, 3)))
+    # df = load_csv('./data_mlp.csv')
+    df = pd.read_csv("./data_mlp.csv", nrows=22)
+    if df is None:
+        exit()
+    train(df)
