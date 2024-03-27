@@ -10,11 +10,11 @@ class Layer:
 
 	def __init_weights(self, input_shape, initializer):
 		if initializer:
-			self.weights = np.matrix(np.ndarray(shape=(self.lenght, input_shape)))
+			self.weights = np.matrix(np.zeros(shape=(self.lenght, input_shape)))
 
 	def __repr__(self) -> str:
 		return (f"activation: {self.activation}\ninitializer: {self.weights_initializer}\nlenght: {self.lenght}\ninput_shape: {self.input_shape}\n" 
-			+ ( f"weights: {self.weights.shape}\n" if self.weights_initializer is not None else ""))
+			+ ( f"weights: {self.weights.shape}\nweights content: {self.weights}" if self.weights_initializer is not None else ""))
 
 
 class NeuralNetwork:
@@ -30,7 +30,7 @@ class NeuralNetwork:
 		self.__init_layers(input_shape, output_shape, layer_shapes_list, 'sigmoid', initializer)
 
 	def __init_layers(self, input_shape, output_shape, shapes_list, activation, initializer):
-		self.layers = list() 
+		self.layers = list()
 		self.layers.append(Layer(1, input_shape, activation))
 		for i, layer_shape in enumerate(shapes_list):
 			self.layers.append(Layer(input_shape, layer_shape, activation, initializer))
@@ -47,7 +47,6 @@ class NeuralNetwork:
 		return repr_string
 
 	def forward_propagation(self):
-		print(self.features)
 		for index, row in self.features.iterrows():
 			print(np.array(row.values))
 

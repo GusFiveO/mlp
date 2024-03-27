@@ -6,7 +6,8 @@ import pandas as pd
 
 def train(df: pd.DataFrame):
 	targets = df.pop('2')
-	print(df)
+	# print(df)
+	print("targets:")
 	print(targets)
 	model = NeuralNetwork(df, targets, 10, 0.1, [2], "uniform")
 	print(model)
@@ -14,7 +15,8 @@ def train(df: pd.DataFrame):
 
 if __name__ == "__main__":
 	# df = load_csv('./data_mlp.csv')
-	df = pd.read_csv('./data_mlp.csv', nrows=3)
+	df = pd.read_csv('./data_mlp.csv', nrows=22)
 	if df is None:
 		exit()
 	train(df)
+	print(list((2, 3)))
