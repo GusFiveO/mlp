@@ -7,6 +7,9 @@ import pandas as pd
 
 def train(df: pd.DataFrame):
     targets = df.pop("2")
+    print(df)
+    df = df.drop(["1"], axis=1)
+
     print("targets:")
     print(targets)
     print()
@@ -17,7 +20,8 @@ def train(df: pd.DataFrame):
 
 if __name__ == "__main__":
     # df = load_csv('./data_mlp.csv')
-    df = pd.read_csv("./data_mlp.csv", nrows=22)
+    # df = pd.read_csv("./data_mlp.csv", nrows=22)
+    df = pd.read_csv("./data_test.csv")
     if df is None:
         exit()
     train(df)

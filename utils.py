@@ -19,3 +19,13 @@ def random_uniform_generator(size=1, mult=7**5, seed=12345678, mod=(2**31) - 1):
         x = (x * mult + 1) % mod
         U[i] = x / mod
     return U
+
+
+def sigmoid(X):
+    return 1 / (1 + np.exp(-X))
+
+
+def softmax(x):
+    e_x = np.exp(x)
+    ret = e_x / e_x.sum(axis=0)
+    return ret
