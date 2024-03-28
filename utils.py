@@ -22,10 +22,12 @@ def random_uniform_generator(size=1, mult=7**5, seed=12345678, mod=(2**31) - 1):
 
 
 def sigmoid(X):
+    print("in sigmoid: ", (-X))
+    print("in sigmoid: ", np.exp(-X))
     return 1 / (1 + np.exp(-X))
 
 
 def softmax(x):
     e_x = np.exp(x)
-    ret = e_x / e_x.sum(axis=0)
+    ret = e_x / e_x.sum()
     return ret

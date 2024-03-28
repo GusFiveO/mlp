@@ -15,12 +15,12 @@ class Layer:
         self.input_shape = input_shape
         self.__init_weights(input_shape, weights_initializer)
         self.activations = np.zeros(shape=(1, lenght))
-        self.biases = np.zeros(shape=(lenght, 1))
+        self.biases = np.zeros(shape=(1, lenght))
 
     def __init_weights(self, input_shape, initializer):
         if initializer == "uniform":
             rand = random_uniform_generator(self.lenght * input_shape)
-            self.weights = rand.reshape(self.lenght, input_shape)
+            self.weights = rand.reshape(input_shape, self.lenght)
 
     def __repr__(self) -> str:
         return (
@@ -35,17 +35,11 @@ class Layer:
     def forward(self, previous_activations):
         if self.activation == "sigmoid":
             self.activations = sigmoid(
-                # previous_activations.dot(self.weights.T) + self.biases
-                self.weights.dot(previous_activations.T)
-                + self.biases
+                previous_activations.dot(self.weights) + self.biases
             )
-            return self.activations.T
+            return self.activations
         elif self.activation == "softmax":
-            self.activations = self.weights.dot(previous_activations.T) + self.biases
-            # print(self.activations)
-            # print(previous_activations)
-            # print(softmax(self.activations.squeeze()))
-            # print(softmax(self.activations))
+            self.activations = previous_activations.dot(self.weights) + self.biases
             self.activations = softmax(self.activations)
             return self.activations
         elif self.activation is None:
@@ -71,7 +65,7 @@ class NeuralNetwork:
         self.layers.append(Layer(input_shape, output_shape, "softmax", initializer))
 
     def __normalize_features(self, features):
-        features = (features - features.max() / features.min()) * 2 - 1
+        features = (features - features.min()) / (features.max() - features.min())
         return features
 
     def __repr__(self) -> str:
@@ -85,7 +79,8 @@ class NeuralNetwork:
         tmp_activations = input_values
         for layer in self.layers:
             tmp_activations = layer.forward(tmp_activations)
-        print(tmp_activations)
+            print("tmp_activation shape: ", tmp_activations.shape)
+        print("output:", tmp_activations)
         return
 
     def fit(self, features, targets):
@@ -95,7 +90,5 @@ class NeuralNetwork:
         self.__init_layers(
             input_shape, output_shape, self.layer_shapes_list, "sigmoid", initializer
         )
-        for index, row in features.iterrows():
-            print(index)
-            self.forward_propagation(np.matrix(row.values))
-            break
+        features = self.__normalize_features(features)
+        self.forward_propagation(features)

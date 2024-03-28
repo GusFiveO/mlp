@@ -3,6 +3,7 @@
 from neural_network import NeuralNetwork
 from utils import load_csv
 import pandas as pd
+import numpy as np
 
 
 def train(df: pd.DataFrame):
@@ -19,9 +20,9 @@ def train(df: pd.DataFrame):
 
 
 if __name__ == "__main__":
-    # df = load_csv('./data_mlp.csv')
-    # df = pd.read_csv("./data_mlp.csv", nrows=22)
-    df = pd.read_csv("./data_test.csv")
+    # df = pd.read_csv("./data_mlp.csv")
+    df = pd.read_csv("./data_mlp.csv", nrows=22)
+    # df = pd.read_csv("./data_test.csv")
     if df is None:
         exit()
     train(df)
