@@ -1,8 +1,9 @@
 import numpy as np
+import pandas as pd 
 import matplotlib.pyplot as plt
 import matplotlib
 
-matplotlib.use("TkAgg")
+# matplotlib.use("TkAgg")
 
 from utils import random_uniform_generator, sigmoid, softmax
 
@@ -67,7 +68,7 @@ class Layer:
 
     def backward(self, dz, previous_activations, targets):
         # print("----------")
-        replacement = {"B": 0, "M": 1}
+        # replacement = {"B": 0, "M": 1}
         targets_lenght = targets.shape[0]
         if dz is None:
             # print(
@@ -79,7 +80,8 @@ class Layer:
             # print(
             #     "first dz:\n", self.activations - targets.map(replacement).to_numpy().T
             # )
-            dz = self.activations - targets.map(replacement).to_numpy()
+            # dz = self.activations - targets.map(replacement).to_numpy()
+            dz = self.activations - targets
         # print("dz:\n", dz)
         # print("previous_activations shape:", previous_activations.shape)
         # print("previouse_activation:", previous_activations)
@@ -128,6 +130,10 @@ class NeuralNetwork:
         features = (features - features.min()) / (features.max() - features.min())
         return features.to_numpy().T
 
+    def __prepare_targets(self, targets):
+        targets = pd.get_dummies(targets, dtype=float)
+        return targets.to_numpy().T
+
     def __repr__(self) -> str:
         repr_string = f"epochs: {self.epochs}\nlearning_rate: {self.learning_rate}\n----------LAYERS-----------\n"
         for i, layer in enumerate(self.layers):
@@ -163,12 +169,14 @@ class NeuralNetwork:
             input_shape, output_shape, self.layer_shapes_list, "sigmoid", initializer
         )
         features = self.__normalize_features(features)
+        print(self.__prepare_targets(targets).shape)
+        targets = self.__prepare_targets(targets)
         for _ in range(self.epochs):
             output = self.forward_propagation(features)
             # print(output)
             # print(self)
             self.backward_propagation(targets, output)
-            break
+            # break
         return output
 
     def predict(self, data):

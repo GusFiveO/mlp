@@ -14,14 +14,14 @@ def train(df: pd.DataFrame):
     # print("targets:")
     # print(targets)
     # print()
-    model = NeuralNetwork(1000, 0.00001, [24, 24, 24])
+    model = NeuralNetwork(1000, 0.0001, [24, 24, 24])
     # model = NeuralNetwork(10, 0.1, [3, 2])
     print(
         "---------------------\n",
         model.fit(df[:400], targets[:400]),
         "\n------------------------",
     )
-    print(model)
+    # print(model)
     print(model.predict(df[400:]))
 
 
