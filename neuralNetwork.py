@@ -37,7 +37,7 @@ class NeuralNetwork:
         return features.to_numpy().T
 
     def __prepare_targets(self, targets):
-        targets = pd.get_dummies(targets, dtype=float)
+        targets = pd.get_dummies(targets, dtype=int)
         return targets.to_numpy().T
 
     def __repr__(self) -> str:
@@ -78,7 +78,7 @@ class NeuralNetwork:
 
     def __shuffle_data(self, features, targets):
         shuffled_indices = list(range(features.shape[1]))
-        rand.Random(42).shuffle(shuffled_indices)
+        rand.Random(3).shuffle(shuffled_indices)
         shuffled_features = np.ndarray(features.shape)
         shuffled_targets = np.ndarray(targets.shape)
         for idx, shuffled_idx in enumerate(shuffled_indices):
@@ -87,6 +87,12 @@ class NeuralNetwork:
         shuffled_features = shuffled_features
         shuffled_targets = shuffled_targets
         return shuffled_features, shuffled_targets
+
+    def __prepare_data(self, features, targets):
+        features = self.__normalize_features(features)
+        targets = self.__prepare_targets(targets)
+        features, targets = self.__shuffle_data(features, targets)
+        return features, targets
 
     def fit(self, features, targets):
         accuracy_history = {"train": [], "valid": []}
@@ -97,9 +103,7 @@ class NeuralNetwork:
         self.__init_layers(
             input_shape, output_shape, self.layer_shapes_list, "sigmoid", initializer
         )
-        features = self.__normalize_features(features)
-        targets = self.__prepare_targets(targets)
-        features, targets = self.__shuffle_data(features, targets)
+        features, targets = self.__prepare_data(features, targets)
         split_index = int(features.shape[1] * 0.80)
         train_features = features[:, :split_index]
         valid_features = features[:, split_index:]
