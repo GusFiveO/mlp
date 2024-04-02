@@ -18,29 +18,23 @@ def split(df: pd.DataFrame):
 
 def train(df: pd.DataFrame):
     targets = df.pop("2")
-    # print(df)
     df = df.drop(["1"], axis=1)
 
-    # print("targets:")
-    # print(targets)
-    # print()
-    epochs = 200
-    # model = NeuralNetwork(epochs, 0.001, [12, 12, 12])
-    model = NeuralNetwork(epochs, 0.001, [24, 24, 24])
-    # model = NeuralNetwork(epochs, 0.0001, [2, 2, 2])
-    # model = NeuralNetwork(10, 0.1, [3, 2])
-    # print(
-    #     "---------------------\n",
-    #     model.fit(df[:400], targets[:400]),
-    #     "\n------------------------",
-    # )
-    output, log_loss_history, accuracy_history = model.fit(df[:400], targets[:400])
-    _, axs = plt.subplots(2)
-    axs[0].plot(range(0, epochs), log_loss_history)
-    axs[1].plot(range(0, epochs), accuracy_history)
+    epochs = 300
+    # model = NeuralNetwork(epochs, 0.001, [12, 12, 12, 2])
+    model = NeuralNetwork(epochs, 0.001, [12, 12])
+    # model = NeuralNetwork(epochs, 0.000314, [24, 24, 24])
+    output, log_loss_history, accuracy_history = model.fit(df, targets)
+    _, axs = plt.subplots(1, 2, figsize=(10, 5))
+    axs[0].plot(range(0, epochs), log_loss_history["train"], label="train loss")
+    axs[0].plot(range(0, epochs), log_loss_history["valid"], label="valid loss")
+    axs[1].plot(range(0, epochs), accuracy_history["train"], label="train acc")
+    axs[1].plot(range(0, epochs), accuracy_history["valid"], label="valid acc")
+    axs[0].legend()
+    axs[1].legend()
+    axs[0].set_title("Binary Cross Entropy")
+    axs[1].set_title("Accuracy")
     plt.show()
-    # print(model)
-    # print(model.predict(df[400:]))
 
 
 if __name__ == "__main__":

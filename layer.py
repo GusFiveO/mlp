@@ -66,6 +66,7 @@ class Layer:
         if dz is None:
             dz = self.activations - targets
         dw = (1 / targets_lenght) * dz.dot(previous_activations.T)
+        # print("dz and is shape\n", dz, "\n", dz.shape, "\n", type(dz[0]))
         db = (1 / targets_lenght) * np.sum(dz, axis=1, keepdims=True)
         next_dz = (
             self.weights.T.dot(dz) * previous_activations * (1 - previous_activations)

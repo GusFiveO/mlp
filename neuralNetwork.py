@@ -1,4 +1,5 @@
 import numpy as np
+import random as rand
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
@@ -75,9 +76,21 @@ class NeuralNetwork:
         total_sample = len(true)
         return correct_prediction / total_sample
 
+    def __shuffle_data(self, features, targets):
+        shuffled_indices = list(range(features.shape[1]))
+        rand.Random(42).shuffle(shuffled_indices)
+        shuffled_features = np.ndarray(features.shape)
+        shuffled_targets = np.ndarray(targets.shape)
+        for idx, shuffled_idx in enumerate(shuffled_indices):
+            shuffled_features[:, idx] = features[:, shuffled_idx]
+            shuffled_targets[:, idx] = targets[:, shuffled_idx]
+        shuffled_features = shuffled_features
+        shuffled_targets = shuffled_targets
+        return shuffled_features, shuffled_targets
+
     def fit(self, features, targets):
-        log_loss_history = []
-        accuracy_history = []
+        accuracy_history = {"train": [], "valid": []}
+        log_loss_history = {"train": [], "valid": []}
         input_shape = features.shape[1]
         output_shape = targets.unique().shape[0]
         initializer = "uniform"
@@ -86,14 +99,28 @@ class NeuralNetwork:
         )
         features = self.__normalize_features(features)
         targets = self.__prepare_targets(targets)
+        features, targets = self.__shuffle_data(features, targets)
+        split_index = int(features.shape[1] * 0.80)
+        train_features = features[:, :split_index]
+        valid_features = features[:, split_index:]
+        train_targets = targets[:, :split_index]
+        valid_targets = targets[:, split_index:]
         for _ in range(self.epochs):
-            output = self.forward_propagation(features)
-            self.backward_propagation(targets, output)
-            log_loss_history.append(
-                self.__compute_binary_cross_entropy(output[0], targets[0])
+            output = self.forward_propagation(train_features)
+            self.backward_propagation(train_targets, output)
+            log_loss_history["train"].append(
+                self.__compute_binary_cross_entropy(output[0], train_targets[0])
             )
-            accuracy_history.append(self.__compute_accuracy(output[0], targets[0]))
-            print("---------------")
+            accuracy_history["train"].append(
+                self.__compute_accuracy(output[0], train_targets[0])
+            )
+            valid_output = self.forward_propagation(valid_features)
+            log_loss_history["valid"].append(
+                self.__compute_binary_cross_entropy(valid_output[0], valid_targets[0])
+            )
+            accuracy_history["valid"].append(
+                self.__compute_accuracy(valid_output[0], valid_targets[0])
+            )
 
         return (output, log_loss_history, accuracy_history)
 
