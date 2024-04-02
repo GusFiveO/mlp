@@ -1,16 +1,20 @@
 #! /usr/bin/env python3
 
-from neural_network import NeuralNetwork
+from neuralNetwork import NeuralNetwork
 from utils import load_csv
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib
+
+matplotlib.use("TkAgg")
 
 
 def split(df: pd.DataFrame):
     print(df.shape[0])
     benign_count = df[df["2"] == "B"].shape[0]
     print("begnin_count: ", benign_count)
+
 
 def train(df: pd.DataFrame):
     targets = df.pop("2")
