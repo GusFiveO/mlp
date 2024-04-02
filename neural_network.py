@@ -67,35 +67,14 @@ class Layer:
         return
 
     def backward(self, dz, previous_activations, targets):
-        # print("----------")
-        # replacement = {"B": 0, "M": 1}
         targets_lenght = targets.shape[0]
         if dz is None:
-            # print(
-            #     "self.activations:\n",
-            #     self.activations,
-            #     "\ntargets:\n",
-            #     targets.map(replacement).to_numpy().reshape((1, targets.shape[0])),
-            # )
-            # print(
-            #     "first dz:\n", self.activations - targets.map(replacement).to_numpy().T
-            # )
-            # dz = self.activations - targets.map(replacement).to_numpy()
             dz = self.activations - targets
-        # print("dz:\n", dz)
-        # print("previous_activations shape:", previous_activations.shape)
-        # print("previouse_activation:", previous_activations)
         dw = (1 / targets_lenght) * dz.dot(previous_activations.T)
-        # print("weights derivative:\n", dw)
-        # print("self.weights:\n", self.weights)
         db = (1 / targets_lenght) * np.sum(dz, axis=1, keepdims=True)
-        # print("biases derivative:\n", db)
-        # print("self.biases:\n", self.biases)
         next_dz = (
             self.weights.T.dot(dz) * previous_activations * (1 - previous_activations)
         )
-        # print("next dz:\n", next_dz)
-        # print("----------")
         return next_dz, dw, db
 
     def update(self, dw, db, learning_rate):
@@ -148,20 +127,31 @@ class NeuralNetwork:
 
     def backward_propagation(self, targets, output):
         tmp_dz = None
+        reversed_layers = list(reversed(self.layers))
 
-        # print(list(reversed(self.layers[1:])))
-        for idx, layer in enumerate(reversed(self.layers[1:])):
+        for idx, layer in enumerate(reversed_layers[:-1]):
             tmp_dz, dw, db = layer.backward(
-                # tmp_dz, self.layers[1 - idx + 1].get_activations(), targets
                 tmp_dz,
-                # self.layers[-(idx - 1)].get_activations(),
-                list(reversed(self.layers))[idx + 1].get_activations(),
+                reversed_layers[idx + 1].get_activations(),
                 targets,
             )
             layer.update(dw, db, self.learning_rate)
         return
 
+    def __compute_log_loss(self, pred, true):
+        epsilon = 1e-15
+        pred = np.clip(pred, epsilon, 1 - epsilon)
+        return - np.mean(true * np.log(pred) + (1 - true) * np.log(1 - pred))
+
+    def __compute_accuracy(self, pred, true):
+        pred_binary = np.round(pred).astype(int)
+        correct_prediction = np.sum(pred_binary == true)
+        total_sample = len(true)
+        return correct_prediction / total_sample
+
     def fit(self, features, targets):
+        log_loss_history = []
+        accuracy_history = []
         input_shape = features.shape[1]
         output_shape = targets.unique().shape[0]
         initializer = "uniform"
@@ -169,15 +159,15 @@ class NeuralNetwork:
             input_shape, output_shape, self.layer_shapes_list, "sigmoid", initializer
         )
         features = self.__normalize_features(features)
-        print(self.__prepare_targets(targets).shape)
         targets = self.__prepare_targets(targets)
         for _ in range(self.epochs):
             output = self.forward_propagation(features)
-            # print(output)
-            # print(self)
             self.backward_propagation(targets, output)
-            # break
-        return output
+            log_loss_history.append(self.__compute_log_loss(output[0], targets[0]))
+            accuracy_history.append(self.__compute_accuracy(output[0], targets[0]))
+            print("---------------")
+
+        return (output, log_loss_history, accuracy_history)
 
     def predict(self, data):
         data = self.__normalize_features(data)
