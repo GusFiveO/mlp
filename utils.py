@@ -11,7 +11,9 @@ def load_csv(path: str):
         return None
 
 
-def random_uniform_generator(size=1, mult=7**5, seed=12345678, mod=(2**31) - 1):
+def random_uniform_generator(
+    max, min, size=1, mult=7**5, seed=12345678, mod=(2**31) - 1
+):
     print(seed)
     U = np.zeros(size)
     x = (seed * mult + 1) % mod
@@ -19,7 +21,25 @@ def random_uniform_generator(size=1, mult=7**5, seed=12345678, mod=(2**31) - 1):
     for i in range(1, size):
         x = (x * mult + 1) % mod
         U[i] = x / mod
-    return U
+    return min + (max - min) * U
+
+
+def xavier_uniform_generator(input_shape, output_shape, seed=123456789):
+    x = np.sqrt(6 / (input_shape + output_shape))
+    return random_uniform_generator(x, -x, size=input_shape * output_shape, seed=seed)
+
+
+def xavier_uniform_initializer(input_units, output_units, seed=None):
+    # Seed the random number generator for reproducibility
+    np.random.seed(seed)
+
+    # Calculate the bound for initializing weights
+    bound = np.sqrt(6 / (input_units + output_units))
+
+    # Generate random numbers from a uniform distribution within the bounds
+    weights = np.random.uniform(-bound, bound, size=(output_units, input_units))
+
+    return weights
 
 
 def sigmoid(X):

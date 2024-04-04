@@ -1,6 +1,14 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
 
-from utils import random_uniform_generator, sigmoid, softmax
+from utils import (
+    random_uniform_generator,
+    sigmoid,
+    softmax,
+    xavier_uniform_generator,
+    xavier_uniform_initializer,
+)
 
 
 class Layer:
@@ -24,12 +32,27 @@ class Layer:
         self.biases = np.zeros(shape=(lenght, 1))
 
     def __init_weights(self, input_shape, initializer):
-        if initializer == "uniform":
-            rand = -1 + (1 + 1) * random_uniform_generator(
+        if initializer == "Uniform":
+            rand = random_uniform_generator(
+                -1,
+                1,
                 self.lenght * input_shape,
                 seed=(self.index + 1) * self.input_shape * self.lenght * 100,
             )
             self.weights = rand.reshape(self.lenght, input_shape)
+        if initializer == "XavierUniform":
+            # rand = xavier_uniform_generator(
+            weights = xavier_uniform_initializer(
+                self.input_shape,
+                self.lenght,
+                seed=(self.index + 1) * self.input_shape * self.lenght * 100,
+            )
+            self.weights = weights
+            # print(self.weights.shape)
+            # self.weights = rand.reshape(self.lenght, input_shape)
+            # print(self.weights)
+            # plt.hist(self.weights.flatten())
+            # plt.show()
 
     def __repr__(self) -> str:
         return (

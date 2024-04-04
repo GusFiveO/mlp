@@ -20,11 +20,17 @@ def train(df: pd.DataFrame):
     targets = df.pop("2")
     df = df.drop(["1"], axis=1)
 
-    epochs = 300
-    # model = NeuralNetwork(epochs, 0.001, [12, 12, 12, 2])
-    model = NeuralNetwork(epochs, 0.001, [12, 12])
-    # model = NeuralNetwork(epochs, 0.000314, [24, 24, 24])
-    output, log_loss_history, accuracy_history = model.fit(df, targets)
+    epochs = 500
+    # epochs = 10000
+    # model = NeuralNetwork(epochs, 0.003, [10, 10])  # for gd
+
+    model = NeuralNetwork(epochs, 0.2, [8])
+    output, log_loss_history, accuracy_history = model.fit(
+        df, targets, initializer="XavierUniform"
+    )
+    # output, log_loss_history, accuracy_history = model.fit(
+    #     df, targets, initializer="Uniform"
+    # )
     _, axs = plt.subplots(1, 2, figsize=(10, 5))
     axs[0].plot(range(0, epochs), log_loss_history["train"], label="train loss")
     axs[0].plot(range(0, epochs), log_loss_history["valid"], label="valid loss")
