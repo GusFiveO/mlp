@@ -75,10 +75,12 @@ class NeuralNetwork:
         features, targets = self.__shuffle_data(features, targets)
         return features, targets
 
-    def forward_propagation(self, input_values):
+    def forward_propagation(self, input_values, training=True, momentum=None):
         tmp_activations = input_values
         for layer in self.layers:
-            tmp_activations = layer.forward(tmp_activations)
+            tmp_activations = layer.forward(
+                tmp_activations, training, momentum=momentum
+            )
         return tmp_activations
 
     def backward_propagation(self, targets, output):
@@ -94,65 +96,41 @@ class NeuralNetwork:
             layer.update(dw, db, self.learning_rate)
         return
 
-    def sgd(self, train_features, train_targets, batch_size=1):
+    def sgd(self, train_features, train_targets, batch_size=1, momentum=None):
         rand_index = rand.randint(0, train_features.shape[1] - 1)
-        print(train_features.shape)
-        print(train_features[:, rand_index : rand_index + batch_size].shape)
         output = self.forward_propagation(
-            # train_features[:, rand_index : rand_index + batch_size].reshape(
-            #     len(train_features), batch_size
-            # )
-            train_features[:, rand_index : rand_index + batch_size]
-        )
-        print("output\n", output)
-        self.backward_propagation(
-            train_targets[:, rand_index : rand_index + batch_size],
-            # train_targets[:, rand_index : rand_index + batch_size].reshape(
-            #     2, batch_size
-            # ),
-            output,
+            train_features[:, rand_index : rand_index + batch_size], momentum=momentum
         )
         full_output = self.forward_propagation(
-            # train_features[:, rand_index : rand_index + batch_size].reshape(
-            #     len(train_features), batch_size
-            # )
-            train_features
-            # train_features[:, rand_index : rand_index + batch_size]
+            train_features,
+            training=False,
+        )
+        self.backward_propagation(
+            train_targets[:, rand_index : rand_index + batch_size],
+            output,
         )
         log_loss = self.__compute_binary_cross_entropy(
             full_output[0],
-            # train_targets[:, rand_index : rand_index + batch_size].reshape(
-            #     2, batch_size
-            # ),
-            # train_targets[:, rand_index : rand_index + batch_size],
-            # output[0],
             train_targets[0],
         )
         accuracy = self.__compute_accuracy(
             full_output[0],
-            # train_targets[:, rand_index : rand_index + batch_size].reshape(
-            #     2, batch_size
-            # ),
-            # train_targets[:, rand_index : rand_index + batch_size],
-            # output[0],
             train_targets[0],
         )
         return output, log_loss, accuracy
 
-    def gd(self, train_features, train_targets):
-        output = self.forward_propagation(train_features)
+    def gd(self, train_features, train_targets, momentum=None):
+        output = self.forward_propagation(train_features, momentum=momentum)
         self.backward_propagation(train_targets, output)
         log_loss = self.__compute_binary_cross_entropy(output[0], train_targets[0])
         accuracy = self.__compute_accuracy(output[0], train_targets[0])
         return output, log_loss, accuracy
 
-    def fit(self, features, targets, initializer):
+    def fit(self, features, targets, initializer, batch_size=None, momentum=None):
         accuracy_history = {"train": [], "valid": []}
         log_loss_history = {"train": [], "valid": []}
         input_shape = features.shape[1]
         output_shape = targets.unique().shape[0]
-        # initializer = "Uniform"
-        # initializer = "XavierUniform"
         self.__init_layers(
             input_shape, output_shape, self.layer_shapes_list, "sigmoid", initializer
         )
@@ -163,8 +141,14 @@ class NeuralNetwork:
         train_targets = targets[:, :split_index]
         valid_targets = targets[:, split_index:]
         for _ in range(self.epochs):
-            output, log_loss, accuracy = self.sgd(train_features, train_targets, 8)
-            # output, log_loss, accuracy = self.gd(train_features, train_targets)
+            if batch_size is not None:
+                output, log_loss, accuracy = self.sgd(
+                    train_features, train_targets, batch_size, momentum=momentum
+                )
+            else:
+                output, log_loss, accuracy = self.gd(
+                    train_features, train_targets, momentum=momentum
+                )
             log_loss_history["train"].append(log_loss)
             accuracy_history["train"].append(accuracy)
             valid_output = self.forward_propagation(valid_features)

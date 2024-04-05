@@ -30,6 +30,7 @@ class Layer:
         self.__init_weights(input_shape, weights_initializer)
         self.activations = np.zeros(shape=(1, lenght))
         self.biases = np.zeros(shape=(lenght, 1))
+        self.acc = None
 
     def __init_weights(self, input_shape, initializer):
         if initializer == "Uniform":
@@ -40,19 +41,15 @@ class Layer:
                 seed=(self.index + 1) * self.input_shape * self.lenght * 100,
             )
             self.weights = rand.reshape(self.lenght, input_shape)
-        if initializer == "XavierUniform":
-            # rand = xavier_uniform_generator(
+        elif initializer == "XavierUniform":
             weights = xavier_uniform_initializer(
                 self.input_shape,
                 self.lenght,
                 seed=(self.index + 1) * self.input_shape * self.lenght * 100,
             )
             self.weights = weights
-            # print(self.weights.shape)
-            # self.weights = rand.reshape(self.lenght, input_shape)
-            # print(self.weights)
-            # plt.hist(self.weights.flatten())
-            # plt.show()
+        else:
+            self.weights = None
 
     def __repr__(self) -> str:
         return (
@@ -67,29 +64,38 @@ class Layer:
     def get_activations(self):
         return self.activations
 
-    def forward(self, previous_activations):
+    def forward(self, previous_activations, training=True, momentum=None):
+        new_activations = None
+        weights = self.weights
+        biases = self.biases
+        if momentum and weights is not None:
+            if self.acc is None:
+                self.acc = {"weights": 0, "biases": 0}
+                self.acc["weights"] = 0
+                self.acc["biases"] = 0
+
+            self.acc["weights"] *= momentum
+            self.acc["biases"] *= momentum
+            weights -= self.acc["weights"]
+            biases -= self.acc["biases"]
         if self.activation == "sigmoid":
-            self.activations = sigmoid(
-                self.weights.dot(previous_activations) + self.biases
-            )
-            return self.activations
+            new_activations = sigmoid(weights.dot(previous_activations) + biases)
         elif self.activation == "softmax":
-            activations = self.weights.dot(previous_activations) + self.biases
-            self.activations = softmax(activations)
-            return self.activations
+            tmp = weights.dot(previous_activations) + biases
+            new_activations = softmax(tmp)
         elif (
             self.activation is None
         ):  # if is the input layer so it will store the features
-            self.activations = previous_activations
-            return previous_activations
-        return
+            new_activations = previous_activations
+        if training is True:
+            self.activations = new_activations
+        return new_activations
 
     def backward(self, dz, previous_activations, targets):
         targets_lenght = targets.shape[0]
         if dz is None:
             dz = self.activations - targets
         dw = (1 / targets_lenght) * dz.dot(previous_activations.T)
-        # print("dz and is shape\n", dz, "\n", dz.shape, "\n", type(dz[0]))
         db = (1 / targets_lenght) * np.sum(dz, axis=1, keepdims=True)
         next_dz = (
             self.weights.T.dot(dz) * previous_activations * (1 - previous_activations)
@@ -97,5 +103,11 @@ class Layer:
         return next_dz, dw, db
 
     def update(self, dw, db, learning_rate):
-        self.weights -= learning_rate * dw
-        self.biases -= learning_rate * db
+        if self.acc is not None:
+            self.weights += self.acc["weights"] - learning_rate * dw
+            self.biases += self.acc["biases"] - learning_rate * db
+            self.acc["weights"] = self.acc["weights"] - learning_rate * dw
+            self.acc["biases"] = self.acc["biases"] - learning_rate * db
+        else:
+            self.weights -= learning_rate * dw
+            self.biases -= learning_rate * db

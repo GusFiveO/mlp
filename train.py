@@ -10,27 +10,25 @@ import matplotlib
 matplotlib.use("TkAgg")
 
 
-def split(df: pd.DataFrame):
-    print(df.shape[0])
-    benign_count = df[df["2"] == "B"].shape[0]
-    print("begnin_count: ", benign_count)
-
-
 def train(df: pd.DataFrame):
     targets = df.pop("2")
     df = df.drop(["1"], axis=1)
 
     epochs = 500
+    epochs = 100
     # epochs = 10000
+    model = NeuralNetwork(epochs, 0.02, [10, 10])  # for gd
     # model = NeuralNetwork(epochs, 0.003, [10, 10])  # for gd
 
-    model = NeuralNetwork(epochs, 0.2, [8])
+    # model = NeuralNetwork(epochs, 0.1, [15])
     output, log_loss_history, accuracy_history = model.fit(
-        df, targets, initializer="XavierUniform"
+        df,
+        targets,
+        initializer="XavierUniform",
+        # initializer="Uniform",
+        # batch_size=8,
+        momentum=0.8,
     )
-    # output, log_loss_history, accuracy_history = model.fit(
-    #     df, targets, initializer="Uniform"
-    # )
     _, axs = plt.subplots(1, 2, figsize=(10, 5))
     axs[0].plot(range(0, epochs), log_loss_history["train"], label="train loss")
     axs[0].plot(range(0, epochs), log_loss_history["valid"], label="valid loss")
@@ -49,5 +47,4 @@ if __name__ == "__main__":
     # df = pd.read_csv("./data_test.csv")
     if df is None:
         exit()
-    split(df)
     train(df)
