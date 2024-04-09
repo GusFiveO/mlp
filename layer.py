@@ -61,6 +61,9 @@ class Layer:
             )
         )
 
+    def reset_acc(self):
+        self.acc = None
+
     def get_activations(self):
         return self.activations
 

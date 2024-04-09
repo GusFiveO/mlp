@@ -16,6 +16,8 @@ class NeuralNetwork:
         self.learning_rate = learning_rate
         self.layer_shapes_list = layer_shapes_list
         self.layers = []
+        self.saved_layers = None
+        self.patience = 0
 
     def __init_layers(
         self, input_shape, output_shape, shapes_list, activation, initializer
@@ -59,7 +61,8 @@ class NeuralNetwork:
 
     def __shuffle_data(self, features, targets):
         shuffled_indices = list(range(features.shape[1]))
-        rand.Random(3).shuffle(shuffled_indices)
+        # rand.Random(3).shuffle(shuffled_indices)
+        rand.shuffle(shuffled_indices)
         shuffled_features = np.ndarray(features.shape)
         shuffled_targets = np.ndarray(targets.shape)
         for idx, shuffled_idx in enumerate(shuffled_indices):
@@ -74,6 +77,16 @@ class NeuralNetwork:
         targets = self.__prepare_targets(targets)
         features, targets = self.__shuffle_data(features, targets)
         return features, targets
+
+    def __save(self):
+        self.saved_layers = self.layers
+
+    def __reset_saved_layers(self):
+        self.saved_layers = None
+
+    def __reset_acc(self):
+        for layer in self.layers:
+            layer.reset_acc()
 
     def forward_propagation(self, input_values, training=True, momentum=None):
         tmp_activations = input_values
@@ -127,6 +140,8 @@ class NeuralNetwork:
         return output, log_loss, accuracy
 
     def fit(self, features, targets, initializer, batch_size=None, momentum=None):
+        best_loss = None
+        best_epoch = None
         accuracy_history = {"train": [], "valid": []}
         log_loss_history = {"train": [], "valid": []}
         input_shape = features.shape[1]
@@ -152,15 +167,28 @@ class NeuralNetwork:
             log_loss_history["train"].append(log_loss)
             accuracy_history["train"].append(accuracy)
             valid_output = self.forward_propagation(valid_features)
-            log_loss_history["valid"].append(
-                self.__compute_binary_cross_entropy(valid_output[0], valid_targets[0])
+            valid_loss = self.__compute_binary_cross_entropy(
+                valid_output[0], valid_targets[0]
             )
-            accuracy_history["valid"].append(
-                self.__compute_accuracy(valid_output[0], valid_targets[0])
-            )
-            # break
-
-        return (output, log_loss_history, accuracy_history)
+            log_loss_history["valid"].append(valid_loss)
+            valid_accuracy = self.__compute_accuracy(valid_output[0], valid_targets[0])
+            accuracy_history["valid"].append(valid_accuracy)
+            if best_loss is None or valid_loss < best_loss:
+                self.__save()
+                best_loss = valid_loss
+                best_epoch = _
+                if self.patience != 0:
+                    self.patience = 0
+                    self.__reset_saved_layers()
+            elif valid_loss > best_loss:
+                self.patience += 1
+                if self.patience >= 30:
+                    break
+        if self.saved_layers is not None:
+            self.layers = self.saved_layers
+            self.__reset_saved_layers()
+            self.__reset_acc()
+        return (output, log_loss_history, accuracy_history, best_epoch)
 
     def predict(self, data):
         data = self.__normalize_features(data)
