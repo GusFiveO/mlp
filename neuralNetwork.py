@@ -38,14 +38,11 @@ class NeuralNetwork:
 
     def __normalize_features(self, features):
         features = (features - features.min()) / (features.max() - features.min())
-        # return features.to_numpy().T
-        return features
+        return features.to_numpy().T
 
     def __prepare_targets(self, targets):
-        print(targets)
         targets = pd.get_dummies(targets, dtype=int)
-        # return targets.to_numpy().T
-        return targets.to_numpy()
+        return targets.to_numpy().T
 
     def __repr__(self) -> str:
         repr_string = f"epochs: {self.epochs}\nlearning_rate: {self.learning_rate}\n----------LAYERS-----------\n"
@@ -66,16 +63,10 @@ class NeuralNetwork:
 
     def __shuffle_data(self, features, targets):
         shuffled_indices = list(range(features.shape[1]))
-        print(shuffled_indices)
         # rand.Random(3).shuffle(shuffled_indices)
         rand.shuffle(shuffled_indices)
         shuffled_features = np.ndarray(features.shape)
         shuffled_targets = np.ndarray(targets.shape)
-        print(type(shuffled_features))
-        print(type(shuffled_features[0]))
-        print(type(shuffled_targets))
-        print(type(shuffled_targets[0]))
-        # shuffled_indices = list(range(features.shape[0]))
         for idx, shuffled_idx in enumerate(shuffled_indices):
             shuffled_features[:, idx] = features[:, shuffled_idx]
             shuffled_targets[:, idx] = targets[:, shuffled_idx]
@@ -83,43 +74,16 @@ class NeuralNetwork:
         shuffled_targets = shuffled_targets
         return shuffled_features, shuffled_targets
 
-    # def __prepare_data(self, features, targets):
-    #     features = self.__normalize_features(features)
-    #     targets = self.__prepare_targets(targets)
-    #     features, targets = self.__shuffle_data(features, targets)
-    #     return features, targets
-
     def __prepare_data(self, features, targets):
-        sample_len = 0
-
         features = self.__normalize_features(features)
-        targets = targets.sample(frac=1)
-        # plt.hist(targets)
-        # plt.show()
-        benin_datas = targets[targets["2"] == "B"]
-        malicious_datas = targets[targets["2"] == "M"]
-        if len(benin_datas) < len(malicious_datas):
-            sample_len = len(benin_datas)
-        else:
-            sample_len = len(malicious_datas)
-        sample_targets = pd.concat(
-            [benin_datas.iloc[:sample_len], malicious_datas]
-        ).sort_index()
-        sample_index_list = sample_targets.index.to_list()
-        sample_features = features.loc[sample_index_list]
-        # plt.hist(sample_targets)
-        # plt.show()
-        # print(features)
         targets = self.__prepare_targets(targets)
-        print("before:", sample_targets)
-        sample_targets = self.__prepare_targets(sample_targets)
-        print("after:", sample_targets)
-        targets = sample_targets.T
-        features = sample_features.to_numpy().T
-        print(features, targets)
-        print(features.shape, targets.shape)
-        # features, targets = self.__shuffle_data(features, targets)
-        return features, targets
+        features, targets = self.__shuffle_data(features, targets)
+        split_index = int(features.shape[1] * 0.80)
+        train_features = features[:, :split_index]
+        valid_features = features[:, split_index:]
+        train_targets = targets[:, :split_index]
+        valid_targets = targets[:, split_index:]
+        return train_features, train_targets, valid_features, valid_targets
 
     def __save(self):
         self.saved_layers = self.layers
@@ -201,24 +165,14 @@ class NeuralNetwork:
         self.best_epoch = None
         accuracy_history = {"train": [], "valid": []}
         log_loss_history = {"train": [], "valid": []}
+        input_shape = features.shape[1]
         output_shape = targets[targets.columns[0]].unique().shape[0]
-        features, targets = self.__prepare_data(features, targets)
-        # input_shape = features.shape[1]
-        input_shape = features.shape[0]
-        print(input_shape, output_shape)
         self.__init_layers(
             input_shape, output_shape, self.layer_shapes_list, "sigmoid", initializer
         )
-        print(self)
-        # features, targets = self.__prepare_data(features, targets)
-        split_index = int(features.shape[1] * 0.80)
-        # split_index = int(features.shape[1] * 0.70)
-        train_features = features[:, :split_index]
-        valid_features = features[:, split_index:]
-        train_targets = targets[:, :split_index]
-        valid_targets = targets[:, split_index:]
-        print(features.shape)
-        print(targets.shape)
+        train_features, train_targets, valid_features, valid_targets = (
+            self.__prepare_data(features, targets)
+        )
 
         for epoch in range(self.epochs):
             if batch_size is not None:
