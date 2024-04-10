@@ -78,7 +78,12 @@ class NeuralNetwork:
         features = self.__normalize_features(features)
         targets = self.__prepare_targets(targets)
         features, targets = self.__shuffle_data(features, targets)
-        return features, targets
+        split_index = int(features.shape[1] * 0.80)
+        train_features = features[:, :split_index]
+        valid_features = features[:, split_index:]
+        train_targets = targets[:, :split_index]
+        valid_targets = targets[:, split_index:]
+        return train_features, train_targets, valid_features, valid_targets
 
     def __save(self):
         self.saved_layers = self.layers
@@ -165,12 +170,9 @@ class NeuralNetwork:
         self.__init_layers(
             input_shape, output_shape, self.layer_shapes_list, "sigmoid", initializer
         )
-        features, targets = self.__prepare_data(features, targets)
-        split_index = int(features.shape[1] * 0.80)
-        train_features = features[:, :split_index]
-        valid_features = features[:, split_index:]
-        train_targets = targets[:, :split_index]
-        valid_targets = targets[:, split_index:]
+        train_features, train_targets, valid_features, valid_targets = (
+            self.__prepare_data(features, targets)
+        )
 
         for epoch in range(self.epochs):
             if batch_size is not None:
