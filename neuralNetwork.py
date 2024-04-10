@@ -18,6 +18,8 @@ class NeuralNetwork:
         self.layers = []
         self.saved_layers = None
         self.patience = 0
+        self.best_loss = None
+        self.best_epoch = None
 
     def __init_layers(
         self, input_shape, output_shape, shapes_list, activation, initializer
@@ -139,9 +141,23 @@ class NeuralNetwork:
         accuracy = self.__compute_accuracy(output[0], train_targets[0])
         return output, log_loss, accuracy
 
+    def early_stop(self, valid_loss, epoch, max_patience=20):
+        if self.best_loss is None or valid_loss < self.best_loss:
+            self.__save()
+            self.best_loss = valid_loss
+            self.best_epoch = epoch
+            if self.patience != 0:
+                self.patience = 0
+                self.__reset_saved_layers()
+        elif valid_loss > self.best_loss:
+            self.patience += 1
+            if self.patience >= max_patience:
+                return True
+        return False
+
     def fit(self, features, targets, initializer, batch_size=None, momentum=None):
-        best_loss = None
-        best_epoch = None
+        self.best_loss = None
+        self.best_epoch = None
         accuracy_history = {"train": [], "valid": []}
         log_loss_history = {"train": [], "valid": []}
         input_shape = features.shape[1]
@@ -155,7 +171,8 @@ class NeuralNetwork:
         valid_features = features[:, split_index:]
         train_targets = targets[:, :split_index]
         valid_targets = targets[:, split_index:]
-        for _ in range(self.epochs):
+
+        for epoch in range(self.epochs):
             if batch_size is not None:
                 output, log_loss, accuracy = self.sgd(
                     train_features, train_targets, batch_size, momentum=momentum
@@ -173,22 +190,14 @@ class NeuralNetwork:
             log_loss_history["valid"].append(valid_loss)
             valid_accuracy = self.__compute_accuracy(valid_output[0], valid_targets[0])
             accuracy_history["valid"].append(valid_accuracy)
-            if best_loss is None or valid_loss < best_loss:
-                self.__save()
-                best_loss = valid_loss
-                best_epoch = _
-                if self.patience != 0:
-                    self.patience = 0
-                    self.__reset_saved_layers()
-            elif valid_loss > best_loss:
-                self.patience += 1
-                if self.patience >= 30:
-                    break
+            if self.early_stop(valid_loss, epoch, max_patience=30) is True:
+                break
+
         if self.saved_layers is not None:
             self.layers = self.saved_layers
             self.__reset_saved_layers()
-            self.__reset_acc()
-        return (output, log_loss_history, accuracy_history, best_epoch)
+        self.__reset_acc()
+        return (output, log_loss_history, accuracy_history, self.best_epoch)
 
     def predict(self, data):
         data = self.__normalize_features(data)

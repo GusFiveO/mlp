@@ -17,9 +17,9 @@ def train(df: pd.DataFrame):
     epochs = 500
     # epochs = 150
     # epochs = 2000
-    # epochs = 2500
+    epochs = 2500
     model = NeuralNetwork(epochs, 0.02, [10, 10])  # for gd
-    # model = NeuralNetwork(epochs, 0.001, [10])  # for gd
+    # model = NeuralNetwork(epochs, 0.001, [8, 8])  # for gd
 
     # model = NeuralNetwork(epochs, 0.1, [15])
     output, log_loss_history, accuracy_history, best_epochs = model.fit(
@@ -55,9 +55,7 @@ def train(df: pd.DataFrame):
 
 
 if __name__ == "__main__":
-    # df = pd.read_csv("./data_mlp.csv", nrows=22)
     df = pd.read_csv("./data_mlp.csv")
-    # df = pd.read_csv("./data_test.csv")
     if df is None:
         exit()
     train(df)
