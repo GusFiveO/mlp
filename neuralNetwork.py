@@ -24,15 +24,22 @@ class NeuralNetwork:
     def __init_layers(
         self, input_shape, output_shape, shapes_list, activation, initializer
     ):
-        self.layers.append(Layer(1, input_shape, None, index=1))
-        for i, layer_shape in enumerate(shapes_list):
+        i = 0
+        self.layers.append(Layer(1, input_shape, None, index=i))
+        for layer_shape in shapes_list:
+            i += 1
             self.layers.append(
                 Layer(input_shape, layer_shape, activation, initializer, index=i)
             )
             input_shape = layer_shape
         self.layers.append(
             Layer(
-                input_shape, output_shape, "softmax", initializer, is_last=True, index=i
+                input_shape,
+                output_shape,
+                "softmax",
+                initializer,
+                is_last=True,
+                index=i + 1,
             )
         )
 
@@ -47,7 +54,8 @@ class NeuralNetwork:
     def __repr__(self) -> str:
         repr_string = f"epochs: {self.epochs}\nlearning_rate: {self.learning_rate}\n----------LAYERS-----------\n"
         for i, layer in enumerate(self.layers):
-            repr_string += f"\nlayer n{i}:\n" + repr(layer) + "\n"
+            # repr_string += f"\nlayer n{i}:\n" + repr(layer) + "\n"
+            repr_string += repr(layer) + "\n"
         return repr_string
 
     def __compute_binary_cross_entropy(self, pred, true):

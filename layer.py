@@ -53,7 +53,8 @@ class Layer:
 
     def __repr__(self) -> str:
         return (
-            f"activation: {self.activation}\nactivations: {self.activations}\nshape: {self.activations.shape}\nbiases: {self.biases}\ninitializer: {self.weights_initializer}\n"
+            f"layer n{self.index}\n"
+            + f"activation: {self.activation}\nactivations: {self.activations}\nshape: {self.activations.shape}\nbiases: {self.biases}\ninitializer: {self.weights_initializer}\n"
             + (
                 f"weights: {self.weights.shape}\nweights content: {self.weights}"
                 if self.weights_initializer is not None
