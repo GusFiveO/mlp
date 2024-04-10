@@ -11,7 +11,7 @@ matplotlib.use("TkAgg")
 
 
 def train(df: pd.DataFrame):
-    targets = df.pop("2")
+    targets = pd.DataFrame(df.pop("2"))
     df = df.drop(["1"], axis=1)
 
     epochs = 500
