@@ -54,7 +54,6 @@ class NeuralNetwork:
     def __repr__(self) -> str:
         repr_string = f"epochs: {self.epochs}\nlearning_rate: {self.learning_rate}\n----------LAYERS-----------\n"
         for i, layer in enumerate(self.layers):
-            # repr_string += f"\nlayer n{i}:\n" + repr(layer) + "\n"
             repr_string += repr(layer) + "\n"
         return repr_string
 
@@ -69,29 +68,52 @@ class NeuralNetwork:
         total_sample = len(true)
         return correct_prediction / total_sample
 
-    def __shuffle_data(self, features, targets):
-        shuffled_indices = list(range(features.shape[1]))
-        # rand.Random(3).shuffle(shuffled_indices)
-        rand.shuffle(shuffled_indices)
-        shuffled_features = np.ndarray(features.shape)
-        shuffled_targets = np.ndarray(targets.shape)
-        for idx, shuffled_idx in enumerate(shuffled_indices):
-            shuffled_features[:, idx] = features[:, shuffled_idx]
-            shuffled_targets[:, idx] = targets[:, shuffled_idx]
-        shuffled_features = shuffled_features
-        shuffled_targets = shuffled_targets
-        return shuffled_features, shuffled_targets
+    @classmethod
+    def split(cls, features, targets, train_percent):
+        # benin_targets = targets[targets["diagnosis"] == "B"]
+        # malicious_targets = targets[targets["diagnosis"] == "M"]
+        # benin_targets = targets[targets["diagnosis"] == 0]
+        # malicious_targets = targets[targets["diagnosis"] == 1]
+        # benin_targets_split_index = int(len(benin_targets) * train_percent / 100)
+        # malicious_targets_split_index = int(
+        #     len(malicious_targets) * train_percent / 100
+        # )
 
-    def __prepare_data(self, features, targets):
-        features = self.__normalize_features(features)
-        targets = self.__prepare_targets(targets)
-        features, targets = self.__shuffle_data(features, targets)
-        split_index = int(features.shape[1] * 0.80)
-        train_features = features[:, :split_index]
-        valid_features = features[:, split_index:]
-        train_targets = targets[:, :split_index]
-        valid_targets = targets[:, split_index:]
-        return train_features, train_targets, valid_features, valid_targets
+        # benin_train_targets = benin_targets.iloc[:benin_targets_split_index]
+        # malicious_train_targets = malicious_targets.iloc[:malicious_targets_split_index]
+
+        # benin_valid_targets = benin_targets.iloc[benin_targets_split_index:]
+        # malicious_valid_targets = malicious_targets.iloc[malicious_targets_split_index:]
+
+        # benin_train_features = features.loc[benin_train_targets.index]
+        # malicious_train_features = features.loc[malicious_train_targets.index]
+
+        # benin_valid_features = features.loc[benin_valid_targets.index]
+        # malicious_valid_features = features.loc[malicious_valid_targets.index]
+
+        # train_features = pd.concat([benin_train_features, malicious_train_features])
+        # valid_features = pd.concat([benin_valid_features, malicious_valid_features])
+
+        # train_targets = pd.concat([benin_train_targets, malicious_train_targets])
+        # valid_targets = pd.concat([benin_valid_targets, malicious_valid_targets])
+
+        features_split_index = int(len(features) * train_percent / 100)
+        targets_split_index = int(len(targets) * train_percent / 100)
+        train_targets = targets.iloc[:targets_split_index]
+        train_features = features.iloc[:features_split_index]
+        valid_targets = targets.iloc[targets_split_index:]
+        valid_features = features.iloc[features_split_index:]
+        return train_features, train_targets, (valid_features, valid_targets)
+
+    def __prepare_data(self, train_features, train_targets, validation_data):
+        train_features = self.__normalize_features(train_features)
+        train_targets = self.__prepare_targets(train_targets)
+        if validation_data is not None:
+            valid_features, valid_targets = validation_data
+            valid_features = self.__normalize_features(valid_features)
+            valid_targets = self.__prepare_targets(valid_targets)
+            return train_features, train_targets, valid_features, valid_targets
+        return train_features, train_targets, None, None
 
     def __save_layers(self):
         self.saved_layers = self.layers
@@ -195,7 +217,15 @@ class NeuralNetwork:
                 return True
         return False
 
-    def fit(self, features, targets, initializer, batch_size=None, momentum=None):
+    def fit(
+        self,
+        features,
+        targets,
+        initializer,
+        validation_data=None,
+        batch_size=None,
+        momentum=None,
+    ):
         self.best_loss = None
         self.best_epoch = None
         accuracy_history = {"train": [], "valid": []}
@@ -206,9 +236,8 @@ class NeuralNetwork:
             input_shape, output_shape, self.layer_shapes_list, "sigmoid", initializer
         )
         train_features, train_targets, valid_features, valid_targets = (
-            self.__prepare_data(features, targets)
+            self.__prepare_data(features, targets, validation_data)
         )
-
         for epoch in range(self.epochs):
             if batch_size is not None:
                 output, log_loss, accuracy = self.sgd(
@@ -220,14 +249,17 @@ class NeuralNetwork:
                 )
             log_loss_history["train"].append(log_loss)
             accuracy_history["train"].append(accuracy)
-            valid_output = self.forward_propagation(valid_features)
-            valid_loss = self.__compute_binary_cross_entropy(
-                valid_output[0], valid_targets[0]
-            )
-            log_loss_history["valid"].append(valid_loss)
-            valid_accuracy = self.__compute_accuracy(valid_output[0], valid_targets[0])
-            accuracy_history["valid"].append(valid_accuracy)
-            if self.early_stop(valid_loss, epoch, max_patience=30) is True:
+            if validation_data is not None:
+                valid_output = self.forward_propagation(valid_features)
+                valid_loss = self.__compute_binary_cross_entropy(
+                    valid_output[0], valid_targets[0]
+                )
+                log_loss_history["valid"].append(valid_loss)
+                valid_accuracy = self.__compute_accuracy(
+                    valid_output[0], valid_targets[0]
+                )
+                accuracy_history["valid"].append(valid_accuracy)
+            if self.early_stop(valid_loss, epoch, max_patience=50) is True:
                 break
 
         if self.saved_layers is not None:

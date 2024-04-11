@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
+from sklearn.neighbors import NearestNeighbors
 
 matplotlib.use("TkAgg")
 
@@ -14,20 +15,31 @@ def train(df: pd.DataFrame):
     targets = pd.DataFrame(df.pop("diagnosis"))
     df = df.drop(["id"], axis=1)
 
+    train_features, train_targets, validation_data = NeuralNetwork.split(
+        df, targets, 80
+    )
+    # _, axs = plt.subplots(2)
+    # axs[0].hist(train_targets)
+    # axs[0].hist(validation_data[1])
+    # plt.show()
+
     epochs = 500
     # epochs = 150
     # epochs = 2000
     epochs = 2500
-    model = NeuralNetwork(epochs, 0.02, [10, 10])  # for gd
-    # model = NeuralNetwork(epochs, 0.001, [8, 8])  # for gd
+    # model = NeuralNetwork(epochs, 0.002, [8, 8, 8])  # for gd
+    model = NeuralNetwork(epochs, 0.005, [128, 128, 128])  # for gd
+    # model = NeuralNetwork(epochs, 0.02, [12, 12])  # for gd
 
     # model = NeuralNetwork(epochs, 0.1, [15])
     output, log_loss_history, accuracy_history, best_epochs = model.fit(
         df,
         targets,
+        validation_data=validation_data,
         initializer="XavierUniform",
         # initializer="Uniform",
-        # batch_size=8,
+        # batch_size=50,
+        # momentum=0.9,
         momentum=0.9,
     )
 
@@ -52,10 +64,10 @@ def train(df: pd.DataFrame):
     print(log_loss_history["valid"][-1])
     print(accuracy_history["valid"][-1])
     plt.show()
-    model.save("./")
-    model.load("./weights.pkl")
-    print(model)
-    print(model.predict(df).shape)
+    # model.save("./")
+    # model.load("./weights.pkl")
+    # print(model)
+    # print(model.predict(df).shape)
 
 
 if __name__ == "__main__":
@@ -97,5 +109,5 @@ if __name__ == "__main__":
         "fractal_dimension_worst",
     ]
     df.columns = columns_titles
-    print(df)
+    df = df.sample(frac=1)
     train(df)
