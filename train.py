@@ -52,6 +52,10 @@ def train(df: pd.DataFrame):
     print(log_loss_history["valid"][-1])
     print(accuracy_history["valid"][-1])
     plt.show()
+    model.save("./")
+    model.load("./weights.pkl")
+    print(model)
+    print(model.predict(df).shape)
 
 
 if __name__ == "__main__":

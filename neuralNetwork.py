@@ -3,6 +3,7 @@ import random as rand
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
+import pickle
 
 matplotlib.use("TkAgg")
 
@@ -38,7 +39,6 @@ class NeuralNetwork:
                 output_shape,
                 "softmax",
                 initializer,
-                is_last=True,
                 index=i + 1,
             )
         )
@@ -93,7 +93,7 @@ class NeuralNetwork:
         valid_targets = targets[:, split_index:]
         return train_features, train_targets, valid_features, valid_targets
 
-    def __save(self):
+    def __save_layers(self):
         self.saved_layers = self.layers
 
     def __reset_saved_layers(self):
@@ -102,6 +102,33 @@ class NeuralNetwork:
     def __reset_acc(self):
         for layer in self.layers:
             layer.reset_acc()
+
+    def save(self, path):
+        infos_list = []
+        for layer in self.layers:
+            infos_list.append(layer.get_infos())
+        with open(path + "weights.pkl", "wb") as fd:
+            pickle.dump(infos_list, fd)
+            print("weights succesfuly saved !")
+
+    def load(self, path):
+        try:
+            with open(path, "rb") as fp:
+                layers_info = pickle.load(fp)
+                new_layers = []
+                for layer_info in layers_info:
+                    new_layer = Layer(
+                        layer_info["input_shape"],
+                        layer_info["lenght"],
+                        None,
+                        layer_info=layer_info,
+                    )
+                    new_layers.append(new_layer)
+                self.layers = new_layers
+        except Exception as e:
+            print("Something went wrong loading weights from this file:", path)
+            print(e)
+        return
 
     def forward_propagation(self, input_values, training=True, momentum=None):
         tmp_activations = input_values
@@ -156,7 +183,7 @@ class NeuralNetwork:
 
     def early_stop(self, valid_loss, epoch, max_patience=20):
         if self.best_loss is None or valid_loss < self.best_loss:
-            self.__save()
+            self.__save_layers()
             self.best_loss = valid_loss
             self.best_epoch = epoch
             if self.patience != 0:

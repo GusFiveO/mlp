@@ -18,19 +18,28 @@ class Layer:
         lenght,
         activation,
         weights_initializer=None,
-        is_last=False,
         index=None,
+        layer_info=None,
     ):
         self.index = index
-        self.is_last = is_last
-        self.activation = activation
-        self.weights_initializer = weights_initializer
         self.lenght = lenght
         self.input_shape = input_shape
-        self.__init_weights(input_shape, weights_initializer)
         self.activations = np.zeros(shape=(1, lenght))
-        self.biases = np.zeros(shape=(lenght, 1))
+        self.weights_initializer = weights_initializer
         self.acc = None
+        if layer_info is not None:
+            print(layer_info)
+            self.weights = np.ndarray(layer_info["weights"])
+            print(self.weights)
+            self.biases = np.ndarray(layer_info["biases"])
+            self.activation = layer_info["activation"]
+        else:
+            self.activation = activation
+            self.__init_weights(input_shape, weights_initializer)
+            if self.weights_initializer is not None:
+                self.biases = np.zeros(shape=(lenght, 1))
+            else:
+                self.biases = None
 
     def __init_weights(self, input_shape, initializer):
         if initializer == "Uniform":
@@ -54,13 +63,23 @@ class Layer:
     def __repr__(self) -> str:
         return (
             f"layer n{self.index}\n"
-            + f"activation: {self.activation}\nactivations: {self.activations}\nshape: {self.activations.shape}\nbiases: {self.biases}\ninitializer: {self.weights_initializer}\n"
+            + f"activation: {self.activation}\nactivations: {self.activations}\nactivations shape: {self.activations.shape}\nbiases: {self.biases}\ninitializer: {self.weights_initializer}\n"
             + (
                 f"weights: {self.weights.shape}\nweights content: {self.weights}"
                 if self.weights_initializer is not None
                 else ""
             )
         )
+
+    def get_infos(self):
+        return {
+            "index": self.index,
+            "weights": self.weights,
+            "biases": self.biases,
+            "activation": self.activation,
+            "input_shape": self.input_shape,
+            "lenght": self.lenght,
+        }
 
     def reset_acc(self):
         self.acc = None
