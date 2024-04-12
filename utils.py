@@ -2,9 +2,12 @@ import pandas as pd
 import numpy as np
 
 
-def load_csv(path: str):
+def load_csv(path: str, header=True):
     try:
-        content = pd.read_csv(path)
+        if header:
+            content = pd.read_csv(path)
+        else:
+            content = pd.read_csv(path, header=None)
         return content
     except Exception as e:
         print(e)
