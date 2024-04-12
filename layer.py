@@ -28,10 +28,10 @@ class Layer:
         self.weights_initializer = weights_initializer
         self.acc = None
         if layer_info is not None:
-            print(layer_info)
-            self.weights = np.ndarray(layer_info["weights"])
-            print(self.weights)
-            self.biases = np.ndarray(layer_info["biases"])
+            # self.weights = np.ndarray(layer_info["weights"])
+            # self.biases = np.ndarray(layer_info["biases"])
+            self.weights = layer_info["weights"]
+            self.biases = layer_info["biases"]
             self.activation = layer_info["activation"]
         else:
             self.activation = activation

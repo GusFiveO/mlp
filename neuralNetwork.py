@@ -134,30 +134,39 @@ class NeuralNetwork:
         for layer in self.layers:
             layer.reset_acc()
 
+    def __print_metrics(self, epoch, train_metrics, valid_metrics, bold=False):
+        if bold:
+            print("\033[1m")
+            print(
+                f"epoch {epoch}/{self.epochs} - valid_loss: {valid_metrics[0]:.4f} - valid_acc: {valid_metrics[1]:.4f} - train_loss: {train_metrics[0]:.4f} - train_acc: {train_metrics[1]:.4f} ",
+            )
+            print("\033[0m")
+        else:
+            print(
+                f"epoch {epoch}/{self.epochs} - valid_loss: {valid_metrics[0]:.4f} - valid_acc: {valid_metrics[1]:.4f} - train_loss: {train_metrics[0]:.4f} - train_acc: {train_metrics[1]:.4f} ",
+            )
+
     def save(self, path):
         infos_list = []
         for layer in self.layers:
             infos_list.append(layer.get_infos())
-        with open(path + "weights.pkl", "wb") as fd:
+        with open(path + "saved_model.pkl", "wb") as fd:
             pickle.dump(infos_list, fd)
-            print("weights succesfuly saved !")
+            print("model succesfuly saved !")
 
     def load(self, path):
-        try:
-            with open(path, "rb") as fp:
-                layers_info = pickle.load(fp)
-                new_layers = []
-                for layer_info in layers_info:
-                    new_layer = Layer(
-                        layer_info["input_shape"],
-                        layer_info["lenght"],
-                        None,
-                        layer_info=layer_info,
-                    )
-                    new_layers.append(new_layer)
-                self.layers = new_layers
-        except Exception as e:
-            print("Something went wrong loading weights from this file:", path)
+        with open(path, "rb") as fp:
+            layers_info = pickle.load(fp)
+            new_layers = []
+            for layer_info in layers_info:
+                new_layer = Layer(
+                    layer_info["input_shape"],
+                    layer_info["lenght"],
+                    None,
+                    layer_info=layer_info,
+                )
+                new_layers.append(new_layer)
+            self.layers = new_layers
         return
 
     def forward_propagation(self, input_values, training=True, momentum=None):
@@ -239,7 +248,6 @@ class NeuralNetwork:
         accuracy_history = {"train": [], "valid": []}
         log_loss_history = {"train": [], "valid": []}
         input_shape = features.shape[1]
-        # output_shape = targets[targets.columns[0]].unique().shape[0]
         output_shape = targets.unique().shape[0]
         self.__init_layers(
             input_shape, output_shape, self.layer_shapes_list, "sigmoid", initializer
@@ -249,15 +257,15 @@ class NeuralNetwork:
         )
         for epoch in range(self.epochs):
             if batch_size is not None:
-                output, log_loss, accuracy = self.sgd(
+                output, train_loss, train_accuracy = self.sgd(
                     train_features, train_targets, batch_size, momentum=momentum
                 )
             else:
-                output, log_loss, accuracy = self.gd(
+                output, train_loss, train_accuracy = self.gd(
                     train_features, train_targets, momentum=momentum
                 )
-            log_loss_history["train"].append(log_loss)
-            accuracy_history["train"].append(accuracy)
+            log_loss_history["train"].append(train_loss)
+            accuracy_history["train"].append(train_accuracy)
             if validation_data is not None:
                 valid_output = self.forward_propagation(valid_features)
                 valid_loss = self.__compute_binary_cross_entropy(
@@ -268,9 +276,24 @@ class NeuralNetwork:
                     valid_output[0], valid_targets[0]
                 )
                 accuracy_history["valid"].append(valid_accuracy)
+            self.__print_metrics(
+                epoch, (train_loss, train_accuracy), (valid_loss, valid_accuracy)
+            )
             if self.early_stop(valid_loss, epoch, max_patience=50) is True:
                 break
 
+        self.__print_metrics(
+            self.best_epoch,
+            (
+                log_loss_history["train"][self.best_epoch],
+                accuracy_history["train"][self.best_epoch],
+            ),
+            (
+                log_loss_history["valid"][self.best_epoch],
+                accuracy_history["valid"][self.best_epoch],
+            ),
+            bold=True,
+        )
         if self.saved_layers is not None:
             self.layers = self.saved_layers
             self.__reset_saved_layers()
