@@ -70,32 +70,6 @@ class NeuralNetwork:
 
     @classmethod
     def split(cls, features, targets, train_percent):
-        # benin_targets = targets[targets["diagnosis"] == "B"]
-        # malicious_targets = targets[targets["diagnosis"] == "M"]
-        # benin_targets = targets[targets["diagnosis"] == 0]
-        # malicious_targets = targets[targets["diagnosis"] == 1]
-        # benin_targets_split_index = int(len(benin_targets) * train_percent / 100)
-        # malicious_targets_split_index = int(
-        #     len(malicious_targets) * train_percent / 100
-        # )
-
-        # benin_train_targets = benin_targets.iloc[:benin_targets_split_index]
-        # malicious_train_targets = malicious_targets.iloc[:malicious_targets_split_index]
-
-        # benin_valid_targets = benin_targets.iloc[benin_targets_split_index:]
-        # malicious_valid_targets = malicious_targets.iloc[malicious_targets_split_index:]
-
-        # benin_train_features = features.loc[benin_train_targets.index]
-        # malicious_train_features = features.loc[malicious_train_targets.index]
-
-        # benin_valid_features = features.loc[benin_valid_targets.index]
-        # malicious_valid_features = features.loc[malicious_valid_targets.index]
-
-        # train_features = pd.concat([benin_train_features, malicious_train_features])
-        # valid_features = pd.concat([benin_valid_features, malicious_valid_features])
-
-        # train_targets = pd.concat([benin_train_targets, malicious_train_targets])
-        # valid_targets = pd.concat([benin_valid_targets, malicious_valid_targets])
 
         features_split_index = int(len(features) * train_percent / 100)
         targets_split_index = int(len(targets) * train_percent / 100)
@@ -104,6 +78,41 @@ class NeuralNetwork:
         valid_targets = targets.iloc[targets_split_index:]
         valid_features = features.iloc[features_split_index:]
         return train_features, train_targets, (valid_features, valid_targets)
+
+    @classmethod
+    def stratified_train_test_split(
+        cls,
+        X: pd.DataFrame,
+        y: pd.Series,
+        test_size: float = 0.2,
+        random_state: int = 42,
+    ):
+        df = pd.concat([X, y], axis=1)
+        target_column = y.name
+
+        class_counts = y.value_counts()
+        test_counts = (class_counts * test_size).astype(int)
+
+        train_indices = []
+        test_indices = []
+
+        for class_value in class_counts.index:
+            class_indices = df[df[target_column] == class_value].index.to_list()
+            np.random.seed(random_state)
+            np.random.shuffle(class_indices)
+
+            test_idx = class_indices[: test_counts[class_value]]
+            train_idx = class_indices[test_counts[class_value] :]
+
+            train_indices.extend(train_idx)
+            test_indices.extend(test_idx)
+
+        X_train = X.loc[train_indices]
+        X_test = X.loc[test_indices]
+        y_train = y.loc[train_indices]
+        y_test = y.loc[test_indices]
+
+        return X_train, y_train, (X_test, y_test)
 
     def __prepare_data(self, train_features, train_targets, validation_data):
         train_features = self.__normalize_features(train_features)
@@ -149,7 +158,6 @@ class NeuralNetwork:
                 self.layers = new_layers
         except Exception as e:
             print("Something went wrong loading weights from this file:", path)
-            print(e)
         return
 
     def forward_propagation(self, input_values, training=True, momentum=None):
@@ -231,7 +239,8 @@ class NeuralNetwork:
         accuracy_history = {"train": [], "valid": []}
         log_loss_history = {"train": [], "valid": []}
         input_shape = features.shape[1]
-        output_shape = targets[targets.columns[0]].unique().shape[0]
+        # output_shape = targets[targets.columns[0]].unique().shape[0]
+        output_shape = targets.unique().shape[0]
         self.__init_layers(
             input_shape, output_shape, self.layer_shapes_list, "sigmoid", initializer
         )
