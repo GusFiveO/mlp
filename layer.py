@@ -28,8 +28,6 @@ class Layer:
         self.weights_initializer = weights_initializer
         self.acc = None
         if layer_info is not None:
-            # self.weights = np.ndarray(layer_info["weights"])
-            # self.biases = np.ndarray(layer_info["biases"])
             self.weights = layer_info["weights"]
             self.biases = layer_info["biases"]
             self.activation = layer_info["activation"]
@@ -47,14 +45,12 @@ class Layer:
                 -1,
                 1,
                 self.lenght * input_shape,
-                seed=(self.index + 1) * self.input_shape * self.lenght * 100,
             )
             self.weights = rand.reshape(self.lenght, input_shape)
         elif initializer == "XavierUniform":
             weights = xavier_uniform_initializer(
                 self.input_shape,
                 self.lenght,
-                seed=(self.index + 1) * self.input_shape * self.lenght * 100,
             )
             self.weights = weights
         else:

@@ -48,6 +48,7 @@ columns_titles = [
 
 
 def train(df: pd.DataFrame, args):
+    df = df.sample(frac=1)
     targets = df.pop("diagnosis")
     df = df.drop(["id"], axis=1)
 
@@ -71,13 +72,13 @@ def train(df: pd.DataFrame, args):
         )
 
         if args.split:
-            plt.hist(train_targets.map({1: "M", 0: "B"}))
-            plt.hist(validation_data[1].map({1: "M", 0: "B"}))
+            plt.hist(train_targets)
+            plt.hist(validation_data[1])
             plt.legend(["train", "validation"])
             plt.show()
             return
 
-    model = NeuralNetwork(args.epochs, args.learning_rate, args.shape)  # for gd
+    model = NeuralNetwork(args.epochs, args.learning_rate, args.shape)
 
     output, log_loss_history, accuracy_history, best_epochs = model.fit(
         train_features,
@@ -110,63 +111,15 @@ def train(df: pd.DataFrame, args):
     model.save("./")
 
 
-def synthesize_samples(df, target_column, additional_samples=None) -> pd.DataFrame:
-    if additional_samples is None:
-        additional_samples = {}
-
-    class_counts = df[target_column].value_counts()
-    target_counts = {
-        class_label: class_counts.get(class_label, 0)
-        + additional_samples.get(class_label, 0)
-        for class_label in set(class_counts.keys())
-    }
-
-    synthetic_samples = {col: [] for col in df.columns}
-
-    for class_index, required_count in target_counts.items():
-        current_count = class_counts.get(class_index, 0)
-        num_to_synthesize = required_count - current_count
-
-        if num_to_synthesize > 0:
-            class_subframe = df[df[target_column] == class_index]
-            if not class_subframe.empty:
-
-                means = class_subframe.mean()
-                stds = class_subframe.std()
-
-                for _ in range(num_to_synthesize):
-                    synthetic_data = {}
-                    for feature in df.columns:
-                        if feature == target_column:
-                            synthetic_data[feature] = class_index
-                        else:
-                            synthetic_data[feature] = np.random.normal(
-                                means[feature], stds[feature]
-                            )
-                    for k, v in synthetic_data.items():
-                        synthetic_samples[k].append(v)
-
-    if synthetic_samples[df.columns[0]]:
-        synthetic_df = pd.DataFrame(synthetic_samples)
-        balanced_df = pd.concat([df, synthetic_df], ignore_index=True)
-    else:
-        balanced_df = df.copy()
-
-    # balanced_df = balanced_df.sample(frac=1, random_state=1).reset_index(drop=True)
-    balanced_df = balanced_df.sample(frac=1).reset_index(drop=True)
-
-    return balanced_df
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="multilayer perceptron")
     parser.add_argument("-train", action="store_true")
     parser.add_argument("-split", action="store_true")
     parser.add_argument("-predict", action="store_true")
-    parser.add_argument("--learning_rate", type=float, default=0.01)
+    parser.add_argument("--learning_rate", type=float, default=0.03)
     parser.add_argument("--epochs", type=int, default=2500)
     parser.add_argument("--batch_size", type=float)
-    parser.add_argument("--shape", type=int, nargs="+", default=[8, 8])
+    parser.add_argument("--shape", type=int, nargs="+", default=[10, 10])
     parser.add_argument("--momentum", type=float, default=0.9)
     parser.add_argument("path", type=str, help="Path to the file or directory")
     args = parser.parse_args()
@@ -179,14 +132,4 @@ if __name__ == "__main__":
         exit()
 
     df.columns = columns_titles
-    if args.split or args.train:
-        df["diagnosis"] = df["diagnosis"].map({"M": 1, "B": 0})
-        df = synthesize_samples(
-            df,
-            "diagnosis",
-            additional_samples={
-                1: df["diagnosis"].value_counts()[1] * 3,
-                0: df["diagnosis"].value_counts()[0] * 3,
-            },
-        )
     train(df, args)

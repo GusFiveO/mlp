@@ -33,15 +33,11 @@ def xavier_uniform_generator(input_shape, output_shape, seed=None):
 
 
 def xavier_uniform_initializer(input_units, output_units, seed=None):
-    # Seed the random number generator for reproducibility
     np.random.seed(seed)
 
-    # Calculate the bound for initializing weights
     bound = np.sqrt(6 / (input_units + output_units))
 
-    # Generate random numbers from a uniform distribution within the bounds
     weights = np.random.uniform(-bound, bound, size=(output_units, input_units))
-
     return weights
 
 

@@ -69,8 +69,7 @@ class NeuralNetwork:
         return correct_prediction / total_sample
 
     @classmethod
-    def split(cls, features, targets, train_percent):
-
+    def split(cls, features, targets, train_percent=80):
         features_split_index = int(len(features) * train_percent / 100)
         targets_split_index = int(len(targets) * train_percent / 100)
         train_targets = targets.iloc[:targets_split_index]
@@ -98,7 +97,7 @@ class NeuralNetwork:
 
         for class_value in class_counts.index:
             class_indices = df[df[target_column] == class_value].index.to_list()
-            np.random.seed(random_state)
+            # np.random.seed(random_state)
             np.random.shuffle(class_indices)
 
             test_idx = class_indices[: test_counts[class_value]]
@@ -279,7 +278,7 @@ class NeuralNetwork:
             self.__print_metrics(
                 epoch, (train_loss, train_accuracy), (valid_loss, valid_accuracy)
             )
-            if self.early_stop(valid_loss, epoch, max_patience=50) is True:
+            if self.early_stop(valid_loss, epoch, max_patience=100) is True:
                 break
 
         self.__print_metrics(
