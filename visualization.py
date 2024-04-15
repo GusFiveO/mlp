@@ -62,6 +62,7 @@ if __name__ == "__main__":
     diagnosis_row = diagnosis_row.map({"M": 1, "B": 0})
     normalized_df = pd.concat([normalized_df, pd.DataFrame(diagnosis_row)], axis=1)
     print(normalized_df.corr())
+    plt.figure(figsize=(12, 10))
     sns.heatmap(
         normalized_df.corr(),
         annot=True,

@@ -49,22 +49,9 @@ columns_titles = [
 
 def train(df: pd.DataFrame, args):
     df = df.sample(frac=1)
-    targets = df.pop("diagnosis")
-    df = df.drop(["id"], axis=1)
+    targets = df["diagnosis"]
 
-    if args.predict:
-        try:
-            model = NeuralNetwork(None, None, None)
-            model.load("./saved_model.pkl")
-            output = model.predict(df)
-            prediction = pd.Series(output[1].T).round()
-            prediction = prediction.replace({1: "M", 0: "B"})
-            print("prediction:", prediction)
-            print("targets:", targets)
-        except Exception as e:
-            print("Could'nt load weights")
-            print(e)
-        return
+    df = df.drop(["diagnosis", "id"], axis=1)
 
     if args.split or args.train:
         train_features, train_targets, validation_data = (
@@ -129,6 +116,19 @@ if __name__ == "__main__":
 
     df = pd.read_csv(args.path, header=None)
     if df is None:
+        exit()
+
+    if args.predict:
+        df = df.drop([df.columns[0]], axis=1)
+        try:
+            model = NeuralNetwork(None, None, None)
+            model.load("./saved_model.pkl")
+            output = model.predict(df)
+            prediction = pd.Series(output[1].T).round().astype(int)
+            prediction.to_csv("prediction.csv", index=False, header=None)
+        except Exception as e:
+            print("Could'nt load weights")
+            print(e)
         exit()
 
     df.columns = columns_titles
