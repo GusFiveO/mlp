@@ -132,7 +132,7 @@ if __name__ == "__main__":
     parser.add_argument("-predict", action="store_true")
     parser.add_argument("--learning_rate", type=float, default=0.03)
     parser.add_argument("--epochs", type=int, default=2500)
-    parser.add_argument("--batch_size", type=float)
+    parser.add_argument("--batch_size", type=int)
     parser.add_argument("--shape", type=int, nargs="+", default=[10, 10])
     parser.add_argument("--momentum", type=float, default=0.9)
     parser.add_argument("path", type=str, help="Path to the file or directory")

@@ -112,3 +112,39 @@ def confusion_matrix(pred, true):
         index=["Negative", "Positive"],
     )
     return confusion_matrix_df
+
+
+def normalize_features(features):
+    features = (features - features.min()) / (features.max() - features.min())
+    return features.to_numpy().T
+
+
+def prepare_targets(targets):
+    targets = pd.get_dummies(targets, dtype=int)
+    return targets.to_numpy().T
+
+
+def prepare_data(train_features, train_targets, validation_data):
+    train_features = normalize_features(train_features)
+    train_targets = prepare_targets(train_targets)
+    if validation_data is not None:
+        valid_features, valid_targets = validation_data
+        valid_features = normalize_features(valid_features)
+        valid_targets = prepare_targets(valid_targets)
+        return train_features, train_targets, valid_features, valid_targets
+    return train_features, train_targets, None, None
+
+
+def init_histories():
+    accuracy_history = {"train": [], "valid": []}
+    log_loss_history = {"train": [], "valid": []}
+    precision_history = {"train": [], "valid": []}
+    recall_history = {"train": [], "valid": []}
+    f1_history = {"train": [], "valid": []}
+    return (
+        accuracy_history,
+        log_loss_history,
+        precision_history,
+        recall_history,
+        f1_history,
+    )
