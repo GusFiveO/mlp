@@ -4,6 +4,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib
 import pickle
+import copy
+
+from utils import (
+    compute_accuracy,
+    compute_binary_cross_entropy,
+    compute_f1,
+    compute_precision,
+    compute_recall,
+    confusion_matrix,
+)
 
 matplotlib.use("TkAgg")
 
@@ -56,17 +66,6 @@ class NeuralNetwork:
         for i, layer in enumerate(self.layers):
             repr_string += repr(layer) + "\n"
         return repr_string
-
-    def __compute_binary_cross_entropy(self, pred, true):
-        epsilon = 1e-15
-        pred = np.clip(pred, epsilon, 1 - epsilon)
-        return -np.mean(true * np.log(pred) + (1 - true) * np.log(1 - pred))
-
-    def __compute_accuracy(self, pred, true):
-        pred_binary = np.round(pred).astype(int)
-        correct_prediction = np.sum(pred_binary == true)
-        total_sample = len(true)
-        return correct_prediction / total_sample
 
     @classmethod
     def split(cls, features, targets, train_percent=80):
@@ -124,7 +123,11 @@ class NeuralNetwork:
         return train_features, train_targets, None, None
 
     def __save_layers(self):
-        self.saved_layers = self.layers
+        saved_layers = []
+        for layer in self.layers:
+            new_layer = copy.deepcopy(layer)
+            saved_layers.append(new_layer)
+        self.saved_layers = saved_layers
 
     def __reset_saved_layers(self):
         self.saved_layers = None
@@ -137,13 +140,27 @@ class NeuralNetwork:
         if bold:
             print("\033[1m")
             print(
-                f"epoch {epoch}/{self.epochs} - valid_loss: {valid_metrics[0]:.4f} - valid_acc: {valid_metrics[1]:.4f} - train_loss: {train_metrics[0]:.4f} - train_acc: {train_metrics[1]:.4f} ",
+                f"epoch {epoch}/{self.epochs} - valid_loss: {valid_metrics[0]:.4f} - valid_acc: {valid_metrics[1]:.4f} - valid_prec: {valid_metrics[2]:.4f} - train_loss: {train_metrics[0]:.4f} - train_acc: {train_metrics[1]:.4f} - train_prec: {train_metrics[2]:.4f}",
             )
             print("\033[0m")
         else:
             print(
-                f"epoch {epoch}/{self.epochs} - valid_loss: {valid_metrics[0]:.4f} - valid_acc: {valid_metrics[1]:.4f} - train_loss: {train_metrics[0]:.4f} - train_acc: {train_metrics[1]:.4f} ",
+                f"epoch {epoch}/{self.epochs} - valid_loss: {valid_metrics[0]:.4f} - valid_acc: {valid_metrics[1]:.4f} - valid_prec: {valid_metrics[2]:.4f} - train_loss: {train_metrics[0]:.4f} - train_acc: {train_metrics[1]:.4f} - train_prec: {train_metrics[2]:.4f}",
             )
+
+    def early_stop(self, valid_loss, epoch, max_patience=20):
+        if self.best_loss is None or valid_loss < self.best_loss:
+            self.__save_layers()
+            self.patience = 0
+            self.best_loss = valid_loss
+            self.best_epoch = epoch
+        elif valid_loss > self.best_loss:
+            self.patience += 1
+            if self.patience >= max_patience:
+                self.layers = self.saved_layers
+                self.__reset_saved_layers()
+                return True
+        return False
 
     def save(self, path):
         infos_list = []
@@ -202,36 +219,28 @@ class NeuralNetwork:
             train_targets[:, rand_index : rand_index + batch_size],
             output,
         )
-        log_loss = self.__compute_binary_cross_entropy(
+        log_loss = compute_binary_cross_entropy(
             full_output[0],
             train_targets[0],
         )
-        accuracy = self.__compute_accuracy(
+        accuracy = compute_accuracy(
             full_output[0],
             train_targets[0],
         )
-        return output, log_loss, accuracy
+        precision = compute_precision(output[0], train_targets[0])
+        recall = compute_recall(output[0], train_targets[0])
+        f1 = compute_f1(output[0], train_targets[0])
+        return output, log_loss, accuracy, precision, recall, f1
 
     def gd(self, train_features, train_targets, momentum=None):
         output = self.forward_propagation(train_features, momentum=momentum)
         self.backward_propagation(train_targets, output)
-        log_loss = self.__compute_binary_cross_entropy(output[0], train_targets[0])
-        accuracy = self.__compute_accuracy(output[0], train_targets[0])
-        return output, log_loss, accuracy
-
-    def early_stop(self, valid_loss, epoch, max_patience=20):
-        if self.best_loss is None or valid_loss < self.best_loss:
-            self.__save_layers()
-            self.best_loss = valid_loss
-            self.best_epoch = epoch
-            if self.patience != 0:
-                self.patience = 0
-                self.__reset_saved_layers()
-        elif valid_loss > self.best_loss:
-            self.patience += 1
-            if self.patience >= max_patience:
-                return True
-        return False
+        log_loss = compute_binary_cross_entropy(output[0], train_targets[0])
+        accuracy = compute_accuracy(output[0], train_targets[0])
+        precision = compute_precision(output[0], train_targets[0])
+        recall = compute_recall(output[0], train_targets[0])
+        f1 = compute_f1(output[0], train_targets[0])
+        return output, log_loss, accuracy, precision, recall, f1
 
     def fit(
         self,
@@ -246,6 +255,9 @@ class NeuralNetwork:
         self.best_epoch = None
         accuracy_history = {"train": [], "valid": []}
         log_loss_history = {"train": [], "valid": []}
+        precision_history = {"train": [], "valid": []}
+        recall_history = {"train": [], "valid": []}
+        f1_history = {"train": [], "valid": []}
         input_shape = features.shape[1]
         output_shape = targets.unique().shape[0]
         self.__init_layers(
@@ -256,27 +268,48 @@ class NeuralNetwork:
         )
         for epoch in range(self.epochs):
             if batch_size is not None:
-                output, train_loss, train_accuracy = self.sgd(
+                (
+                    output,
+                    train_loss,
+                    train_accuracy,
+                    train_precision,
+                    train_recall,
+                    train_f1,
+                ) = self.sgd(
                     train_features, train_targets, batch_size, momentum=momentum
                 )
             else:
-                output, train_loss, train_accuracy = self.gd(
-                    train_features, train_targets, momentum=momentum
-                )
+                (
+                    output,
+                    train_loss,
+                    train_accuracy,
+                    train_precision,
+                    train_recall,
+                    train_f1,
+                ) = self.gd(train_features, train_targets, momentum=momentum)
             log_loss_history["train"].append(train_loss)
             accuracy_history["train"].append(train_accuracy)
+            precision_history["train"].append(train_precision)
+            recall_history["train"].append(train_recall)
+            f1_history["train"].append(train_f1)
             if validation_data is not None:
                 valid_output = self.forward_propagation(valid_features)
-                valid_loss = self.__compute_binary_cross_entropy(
+                valid_loss = compute_binary_cross_entropy(
                     valid_output[0], valid_targets[0]
                 )
                 log_loss_history["valid"].append(valid_loss)
-                valid_accuracy = self.__compute_accuracy(
-                    valid_output[0], valid_targets[0]
-                )
+                valid_accuracy = compute_accuracy(valid_output[0], valid_targets[0])
                 accuracy_history["valid"].append(valid_accuracy)
+                valid_precision = compute_precision(valid_output[0], valid_targets[0])
+                precision_history["valid"].append(valid_precision)
+                valid_recall = compute_recall(valid_output[0], valid_targets[0])
+                recall_history["valid"].append(valid_recall)
+                valid_f1 = compute_f1(valid_output[0], valid_targets[0])
+                f1_history["valid"].append(valid_f1)
             self.__print_metrics(
-                epoch, (train_loss, train_accuracy), (valid_loss, valid_accuracy)
+                epoch,
+                (train_loss, train_accuracy, train_precision),
+                (valid_loss, valid_accuracy, valid_precision),
             )
             if self.early_stop(valid_loss, epoch, max_patience=100) is True:
                 break
@@ -286,18 +319,28 @@ class NeuralNetwork:
             (
                 log_loss_history["train"][self.best_epoch],
                 accuracy_history["train"][self.best_epoch],
+                precision_history["train"][self.best_epoch],
             ),
             (
                 log_loss_history["valid"][self.best_epoch],
                 accuracy_history["valid"][self.best_epoch],
+                precision_history["valid"][self.best_epoch],
             ),
             bold=True,
         )
-        if self.saved_layers is not None:
-            self.layers = self.saved_layers
-            self.__reset_saved_layers()
         self.__reset_acc()
-        return (output, log_loss_history, accuracy_history, self.best_epoch)
+        output = np.rint(self.forward_propagation(valid_features)[0]).astype(int)
+        cm = confusion_matrix(output, valid_targets[0])
+        return (
+            output,
+            log_loss_history,
+            accuracy_history,
+            precision_history,
+            recall_history,
+            f1_history,
+            cm,
+            self.best_epoch,
+        )
 
     def predict(self, data):
         data = self.__normalize_features(data)

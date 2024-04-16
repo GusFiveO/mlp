@@ -8,6 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 from sklearn.neighbors import NearestNeighbors
+import seaborn as sns
 
 matplotlib.use("TkAgg")
 
@@ -67,7 +68,16 @@ def train(df: pd.DataFrame, args):
 
     model = NeuralNetwork(args.epochs, args.learning_rate, args.shape)
 
-    output, log_loss_history, accuracy_history, best_epochs = model.fit(
+    (
+        output,
+        log_loss_history,
+        accuracy_history,
+        precision_history,
+        recall_history,
+        f1_history,
+        cm,
+        best_epochs,
+    ) = model.fit(
         train_features,
         train_targets,
         validation_data=validation_data,
@@ -77,11 +87,22 @@ def train(df: pd.DataFrame, args):
     )
 
     result_epochs = len(log_loss_history["train"])
-    _, axs = plt.subplots(1, 2, figsize=(10, 5))
+    sns.heatmap(cm, annot=True, cmap="Blues", fmt="d")
+    _, axs = plt.subplots(1, 5, figsize=(25, 5))
     axs[0].plot(range(0, result_epochs), log_loss_history["train"], label="train loss")
     axs[0].plot(range(0, result_epochs), log_loss_history["valid"], label="valid loss")
     axs[1].plot(range(0, result_epochs), accuracy_history["train"], label="train acc")
     axs[1].plot(range(0, result_epochs), accuracy_history["valid"], label="valid acc")
+    axs[2].plot(
+        range(0, result_epochs), precision_history["train"], label="train precision"
+    )
+    axs[2].plot(
+        range(0, result_epochs), precision_history["valid"], label="valid precision"
+    )
+    axs[3].plot(range(0, result_epochs), recall_history["train"], label="train recall")
+    axs[3].plot(range(0, result_epochs), recall_history["valid"], label="valid recall")
+    axs[4].plot(range(0, result_epochs), f1_history["train"], label="train f1")
+    axs[4].plot(range(0, result_epochs), f1_history["valid"], label="valid f1")
     if best_epochs is not None:
         axs[0].scatter(
             best_epochs,
@@ -92,8 +113,14 @@ def train(df: pd.DataFrame, args):
         )
     axs[0].legend()
     axs[1].legend()
+    axs[2].legend()
+    axs[3].legend()
+    axs[4].legend()
     axs[0].set_title("Binary Cross Entropy")
     axs[1].set_title("Accuracy")
+    axs[2].set_title("Precision")
+    axs[3].set_title("Recall")
+    axs[4].set_title("F1")
     plt.show()
     model.save("./")
 
@@ -125,7 +152,9 @@ if __name__ == "__main__":
             model.load("./saved_model.pkl")
             output = model.predict(df)
             prediction = pd.Series(output[1].T).round().astype(int)
-            prediction.to_csv("prediction.csv", index=False, header=None)
+            prediction.replace({1: "M", 0: "B"}).to_csv(
+                "prediction.csv", index=False, header=None
+            )
         except Exception as e:
             print("Could'nt load weights")
             print(e)
