@@ -47,6 +47,11 @@ def sigmoid(X):
 
 def softmax(x):
     e_x = np.exp(x)
+    if e_x.all() != e_x.all():
+        max_per_column = np.max(x, axis=0)
+        x -= max_per_column
+        e_x = np.exp(x)
+
     ret = e_x / (e_x.sum(axis=0) + 1e-15)
     return ret
 
@@ -97,7 +102,7 @@ def compute_recall(pred, true):
 def compute_f1(pred, true):
     precision = compute_precision(pred, true)
     recall = compute_recall(pred, true)
-    return 2 * precision * recall / (precision + recall)
+    return 2 * precision * recall / (precision + recall + 1e-10)
 
 
 def confusion_matrix(pred, true):
@@ -148,3 +153,8 @@ def init_histories():
         recall_history,
         f1_history,
     )
+
+
+def append_to_history(histories, values, key):
+    for history, value in zip(histories, values):
+        history[key].append(value)

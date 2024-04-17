@@ -12,6 +12,25 @@ import seaborn as sns
 
 matplotlib.use("TkAgg")
 
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="multilayer perceptron")
+    parser.add_argument("-train", action="store_true")
+    parser.add_argument("-split", action="store_true")
+    parser.add_argument("-predict", action="store_true")
+    parser.add_argument("--learning_rate", type=float, default=0.03)
+    parser.add_argument("--epochs", type=int, default=2500)
+    parser.add_argument("--batch_size", type=int)
+    parser.add_argument("--shape", type=int, nargs="+", default=[10, 10])
+    parser.add_argument("--momentum", type=float, default=0.9)
+    parser.add_argument("path", type=str, help="Path to the file or directory")
+    args = parser.parse_args()
+
+    if sum([args.split, args.train, args.predict]) != 1:
+        parser.error("Exactly one of -split, -train, -predict must be provided.")
+    return args
+
+
 columns_titles = [
     "id",
     "diagnosis",
@@ -126,23 +145,11 @@ def train(df: pd.DataFrame, args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="multilayer perceptron")
-    parser.add_argument("-train", action="store_true")
-    parser.add_argument("-split", action="store_true")
-    parser.add_argument("-predict", action="store_true")
-    parser.add_argument("--learning_rate", type=float, default=0.03)
-    parser.add_argument("--epochs", type=int, default=2500)
-    parser.add_argument("--batch_size", type=int)
-    parser.add_argument("--shape", type=int, nargs="+", default=[10, 10])
-    parser.add_argument("--momentum", type=float, default=0.9)
-    parser.add_argument("path", type=str, help="Path to the file or directory")
-    args = parser.parse_args()
-
-    if sum([args.split, args.train, args.predict]) != 1:
-        parser.error("Exactly one of -split, -train, -predict must be provided.")
-
-    df = pd.read_csv(args.path, header=None)
-    if df is None:
+    args = parse_arguments()
+    try:
+        df = pd.read_csv(args.path, header=None)
+    except Exception:
+        print(f"Error invalid pathname: {args.path}")
         exit()
 
     if args.predict:
@@ -152,9 +159,9 @@ if __name__ == "__main__":
             model.load("./saved_model.pkl")
             output = model.predict(df)
             prediction = pd.Series(output[1].T).round().astype(int)
-            prediction.replace({1: "M", 0: "B"}).to_csv(
-                "prediction.csv", index=False, header=None
-            )
+            prediction = prediction.replace({1: "M", 0: "B"})
+            prediction.to_csv("prediction.csv", index=False, header=None)
+            print("Prediction saved in the prediction.csv file !")
         except Exception as e:
             print("Could'nt load weights")
             print(e)

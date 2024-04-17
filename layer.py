@@ -98,7 +98,13 @@ class Layer:
             weights -= self.acc["weights"]
             biases -= self.acc["biases"]
         if self.activation == "sigmoid":
+            # print(
+            #     f"weights: {weights}\n",
+            #     f"act: {previous_activations}",
+            #     f"biases: {biases}",
+            # )
             new_activations = sigmoid(weights.dot(previous_activations) + biases)
+            # print(f"new activation: {new_activations}")
         elif self.activation == "softmax":
             tmp = weights.dot(previous_activations) + biases
             new_activations = softmax(tmp)
