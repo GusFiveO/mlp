@@ -28,10 +28,8 @@ def restricted_learning_rate(x):
 
 
 def restricted_positive(x):
-
-    if isinstance(x, int) is not True:
-        raise argparse.ArgumentTypeError("%r not an integer" % (x,))
-    if x > 0:
+    x = int(x)
+    if x < 0:
         raise argparse.ArgumentTypeError("%r not positive" % (x,))
     return x
 
@@ -193,4 +191,20 @@ if __name__ == "__main__":
         exit()
 
     df.columns = columns_titles
+    df = df.drop(
+        [
+            "radius_mean",
+            "perimeter_mean",
+            "area_mean",
+            "radius_se",
+            "radius_worst",
+            "texture_mean",
+            "concavity_mean",
+            "concave points_mean",
+            "perimeter_se",
+            "perimeter_worst",
+        ],
+        axis=1,
+    )
+    print(df)
     train(df, args)
