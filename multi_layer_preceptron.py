@@ -4,13 +4,36 @@ import argparse
 from neuralNetwork import NeuralNetwork
 from utils import load_csv
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
-from sklearn.neighbors import NearestNeighbors
 import seaborn as sns
 
 matplotlib.use("TkAgg")
+
+
+def restricted_momentum(x):
+
+    x = float(x)
+    if x < 0 or x >= 1:
+        raise argparse.ArgumentTypeError("%r not in range [0, 1] 1 exclude" % (x,))
+    return x
+
+
+def restricted_learning_rate(x):
+
+    x = float(x)
+    if x < 0 or x > 1:
+        raise argparse.ArgumentTypeError("%r not in range [0, 1]" % (x,))
+    return x
+
+
+def restricted_positive(x):
+
+    if isinstance(x, int) is not True:
+        raise argparse.ArgumentTypeError("%r not an integer" % (x,))
+    if x > 0:
+        raise argparse.ArgumentTypeError("%r not positive" % (x,))
+    return x
 
 
 def parse_arguments():
@@ -18,11 +41,13 @@ def parse_arguments():
     parser.add_argument("-train", action="store_true")
     parser.add_argument("-split", action="store_true")
     parser.add_argument("-predict", action="store_true")
-    parser.add_argument("--learning_rate", type=float, default=0.03)
-    parser.add_argument("--epochs", type=int, default=2500)
+    parser.add_argument("--learning_rate", type=restricted_learning_rate, default=0.03)
+    parser.add_argument("--epochs", type=restricted_positive, default=2500)
     parser.add_argument("--batch_size", type=int)
-    parser.add_argument("--shape", type=int, nargs="+", default=[10, 10])
-    parser.add_argument("--momentum", type=float, default=0.9)
+    parser.add_argument(
+        "--shape", type=restricted_positive, nargs="+", default=[10, 10]
+    )
+    parser.add_argument("--momentum", type=restricted_momentum, default=0.9)
     parser.add_argument("path", type=str, help="Path to the file or directory")
     args = parser.parse_args()
 
