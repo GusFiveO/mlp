@@ -46,6 +46,7 @@ def parse_arguments():
         "--shape", type=restricted_positive, nargs="+", default=[10, 10]
     )
     parser.add_argument("--momentum", type=restricted_momentum, default=0.9)
+    parser.add_argument("--feature_selection", action="store_true")
     parser.add_argument("path", type=str, help="Path to the file or directory")
     args = parser.parse_args()
 
@@ -150,7 +151,7 @@ def train(df: pd.DataFrame, args):
             best_epochs,
             log_loss_history["valid"][best_epochs],
             c="red",
-            s=100,
+            s=500,
             marker="|",
         )
     axs[0].legend()
@@ -175,36 +176,40 @@ if __name__ == "__main__":
         print(f"Error invalid pathname: {args.path}")
         exit()
 
+    df.columns = columns_titles
+    if args.feature_selection:
+        df = df.drop(
+            [
+                "radius_mean",
+                "perimeter_mean",
+                "area_mean",
+                "radius_se",
+                "radius_worst",
+                "texture_mean",
+                "concavity_mean",
+                "concave points_mean",
+                "perimeter_se",
+                "perimeter_worst",
+            ],
+            axis=1,
+        )
     if args.predict:
-        df = df.drop([df.columns[0]], axis=1)
+        diagnosis = df["diagnosis"]
+        df = df.drop(["diagnosis", "id"], axis=1)
         try:
             model = NeuralNetwork(None, None, None)
             model.load("./saved_model.pkl")
+        except Exception as e:
+            print("Error: could not load weights")
+            print(e)
+        try:
             output = model.predict(df)
             prediction = pd.Series(output[1].T).round().astype(int)
             prediction = prediction.replace({1: "M", 0: "B"})
             prediction.to_csv("prediction.csv", index=False, header=None)
             print("Prediction saved in the prediction.csv file !")
         except Exception as e:
-            print("Could'nt load weights")
+            print("Error: something went wrong during the prediction")
             print(e)
         exit()
-
-    df.columns = columns_titles
-    df = df.drop(
-        [
-            "radius_mean",
-            "perimeter_mean",
-            "area_mean",
-            "radius_se",
-            "radius_worst",
-            "texture_mean",
-            "concavity_mean",
-            "concave points_mean",
-            "perimeter_se",
-            "perimeter_worst",
-        ],
-        axis=1,
-    )
-    print(df)
     train(df, args)

@@ -96,3 +96,4 @@ if __name__ == "__main__":
     sns.heatmap(high_corr, annot=True, cmap="coolwarm", vmin=0, vmax=1)
     plt.show()
     print(high_corr.columns)
+    print(low_corr.columns)
