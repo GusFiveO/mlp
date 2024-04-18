@@ -61,16 +61,12 @@ if __name__ == "__main__":
     normalized_df = (df - df.min()) / (df.max() - df.min()) * 2 - 1
     diagnosis_row = diagnosis_row.map({"M": 1, "B": 0})
     normalized_df = pd.concat([normalized_df, pd.DataFrame(diagnosis_row)], axis=1)
-    print(normalized_df.corr())
 
     correlation = normalized_df.corr().abs()
     threshold = 0.9
 
     # Find pairs with high correlation using np.where and np.triu_indices
     high_corr_pairs = np.where(np.triu(correlation > threshold, k=1))
-
-    for i, j in zip(*high_corr_pairs):
-        print(correlation.index[i], "-", correlation.columns[j])
 
     high_corr_count = []
     for i, col in enumerate(normalized_df.columns):
@@ -80,7 +76,6 @@ if __name__ == "__main__":
         high_corr_count.append((col, num_high_corr))
 
     sorted_high_corr_count = sorted(high_corr_count, key=lambda x: x[1], reverse=True)
-    print(sorted_high_corr_count)
     high_corr_columns = []
     for column, count in sorted_high_corr_count:
         if count > 0:
@@ -95,5 +90,3 @@ if __name__ == "__main__":
     plt.show()
     sns.heatmap(high_corr, annot=True, cmap="coolwarm", vmin=0, vmax=1)
     plt.show()
-    print(high_corr.columns)
-    print(low_corr.columns)
