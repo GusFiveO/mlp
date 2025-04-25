@@ -16,9 +16,8 @@ This project implements a Multilayer Perceptron (MLP) from scratch to predict br
    - [Training the Model](#training-the-model)
    - [Making Predictions](#making-predictions)
 3. [Results](#results)
-   - [Training and Validation Loss](#training-and-validation-loss)
-   - [Accuracy](#accuracy)
-   - [Precision and Recall](#precision-and-recall)
+   - [Output](#output)
+   - [Training and Validation Metrics](#training-and-validation-metrics)
    - [Confusion Matrix](#confusion-matrix)
 4. [Visualizations](#visualizations)
    - [Correlation Heatmaps](#correlation-heatmaps)
@@ -92,7 +91,7 @@ python multi_layer_preceptron.py -predict data/breast_cancer.csv
 
 ![Program output](images/MLP-metrics-output.png)
 
-### Metrics
+### Training and Validation Metrics
 
 ![Training and Validation Metrics](images/MLP-training.png)
 
