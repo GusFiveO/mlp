@@ -19,7 +19,7 @@ from utils import (
     prepare_data,
 )
 
-matplotlib.use("TkAgg")
+# matplotlib.use("TkAgg")
 
 from layer import Layer
 

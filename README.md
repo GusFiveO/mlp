@@ -67,7 +67,7 @@ The model's performance is evaluated using the following metrics:
 To run the project, ensure you have the following dependencies installed:
 
 ```bash
-pip install numpy pandas matplotlib seaborn scikit-learn
+pip install -r requirements.txt
 ```
 
 ### Training the Model
@@ -75,7 +75,7 @@ pip install numpy pandas matplotlib seaborn scikit-learn
 To train the model, use the following command:
 
 ```bash
-python multi_layer_preceptron.py -train --learning_rate 0.03 --epochs 2500 --shape 10 10 --momentum 0.9 --path data/breast_cancer.csv
+python multi_layer_preceptron.py -train --learning_rate 0.03 --epochs 2500 --shape 10 10 --momentum 0.9 data/breast_cancer.csv
 ```
 
 ### Making Predictions
@@ -83,26 +83,22 @@ python multi_layer_preceptron.py -train --learning_rate 0.03 --epochs 2500 --sha
 To make predictions using the trained model, use the following command:
 
 ```bash
-python multi_layer_preceptron.py -predict --path data/breast_cancer.csv
+python multi_layer_preceptron.py -predict data/breast_cancer.csv
 ```
 
 ## Results
 
-### Training and Validation Loss
+### Output
 
-![Training and Validation Loss](path_to_loss_plot.png)
+![Program output](images/MLP-metrics-output.png)
 
-### Accuracy
+### Metrics
 
-![Accuracy](path_to_accuracy_plot.png)
-
-### Precision and Recall
-
-![Precision and Recall](path_to_precision_recall_plot.png)
+![Training and Validation Metrics](images/MLP-training.png)
 
 ### Confusion Matrix
 
-![Confusion Matrix](path_to_confusion_matrix.png)
+![Confusion Matrix](images/MLP-confusion-matrix.png)
 
 ## Visualizations
 
@@ -110,4 +106,10 @@ python multi_layer_preceptron.py -predict --path data/breast_cancer.csv
 
 The `visualization.py` script generates correlation heatmaps to visualize the relationships between features in the dataset.
 
-![Correlation Heatmap](path_to_correlation_heatmap.png)
+#### Before feature selection
+
+![Correlation Heatmap](images/MLP-correlation-heatmap.png)
+
+#### After feature selection
+
+![Correlation Heatmap](images/MLP-feature-selection-heatmap.png)

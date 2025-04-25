@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import seaborn as sns
 
-matplotlib.use("TkAgg")
+# matplotlib.use("TkAgg")
 
 
 def restricted_momentum(x):

@@ -8,7 +8,7 @@ import matplotlib
 import seaborn as sns
 from utils import load_csv
 
-matplotlib.use("TkAgg")
+# matplotlib.use("TkAgg")
 
 columns_titles = [
     "id",
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     low_corr = normalized_df.drop(high_corr_columns, axis=1).corr().abs()
     high_corr = normalized_df[high_corr_columns].corr().abs()
     plt.figure(figsize=(12, 10))
-    sns.heatmap(correlation, annot=True, cmap="coolwarm", vmin=0, vmax=1)
+    sns.heatmap(correlation, annot=False, cmap="coolwarm", vmin=0, vmax=1)
     plt.show()
     sns.heatmap(low_corr, annot=True, cmap="coolwarm", vmin=0, vmax=1)
     plt.show()

@@ -2,3 +2,5 @@
 saved_model.pkl
 prediction.csv
 evaluate.py
+.DS_Store
+.env
